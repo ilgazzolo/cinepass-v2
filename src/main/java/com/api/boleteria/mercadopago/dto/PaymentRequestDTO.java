@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 public class PaymentRequestDTO {
     private String title;
     private String description;
+    private String userEmail;
     private Integer quantity;
     private BigDecimal unitPrice;
 }
