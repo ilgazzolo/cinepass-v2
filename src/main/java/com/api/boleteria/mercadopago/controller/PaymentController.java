@@ -4,14 +4,14 @@ import com.api.boleteria.mercadopago.dto.PaymentRequestDTO;
 import com.api.boleteria.mercadopago.dto.PaymentResponseDTO;
 import com.api.boleteria.mercadopago.service.PaymentService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @RestController
 @RequestMapping("/api/payments")
+@CrossOrigin(origins = "*")
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -20,11 +20,44 @@ public class PaymentController {
         this.paymentService = paymentService;
     }
 
-    @PostMapping("/create_preference")
-    public ResponseEntity<PaymentResponseDTO> createPreference(@RequestBody PaymentRequestDTO dto) {
-        PaymentResponseDTO response = paymentService.createPreference(dto);
-        return ResponseEntity.ok(response);
+
+    @PostMapping("/create")
+    public ResponseEntity<?> createPreference(@RequestBody PaymentRequestDTO dto) {
+
+        try{
+            PaymentResponseDTO response = paymentService.createPreference(dto);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error al generar la preferencia");
+        }
+
     }
+    /*
+        // Angular ejemplo
+        this.http.post('/api/payments/create', payload).subscribe((res: any) => {
+          window.location.href = res.initPoint; // redirige a Mercado Pago
+        });
+     */
+
+    @GetMapping("/success")
+    public String success() { return "Pago aprobado"; }
+
+    @GetMapping("/failure")
+    public String failure() { return "Pago fallido"; }
+
+    @GetMapping("/pending")
+    public String pending() { return "Pago pendiente"; }
+
+    @PostMapping("/webhook")
+    public ResponseEntity<String> webhook(@RequestBody String body,
+                                          @RequestParam Map<String,String> params) {
+        System.out.println("Webhook recibido: " + body + " params: " + params);
+        // Aquí podrías consultar Mercado Pago API y actualizar tu DB.
+        return ResponseEntity.ok("OK");
+    }
+
 }
 
 
