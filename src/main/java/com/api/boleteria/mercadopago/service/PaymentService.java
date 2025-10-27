@@ -50,18 +50,19 @@ public class PaymentService {
                     .failure("https://tusitio.com/pago-fallido")
                     .build();*/
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                    //usando ngrok para que mercado pago pueda acceder a las rutas
-                    .success("https://tunnel.ngrok.io/success")
-                    .pending("https://tunnel.ngrok.io/pending")
-                    .failure("https://tunnel.ngrok.io/failure")
+                    .success("https://larhonda-progravid-caressively.ngrok-free.dev/success")
+                    .pending("https://larhonda-progravid-caressively.ngrok-free.dev/pending")
+                    .failure("https://larhonda-progravid-caressively.ngrok-free.dev/failure")
                     .build();
 
             // Crear preferencia con back_urls y auto_return
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
-                    .items(items)
+                    .items(List.of(itemRequest))
                     .backUrls(backUrls)
+                    .notificationUrl("https://larhonda-progravid-caressively.ngrok-free.dev/api/payments/notification")
                     .autoReturn("approved")
                     .build();
+
 
 
             PreferenceClient client = new PreferenceClient();
@@ -70,7 +71,6 @@ public class PaymentService {
 
             // Registrar log del intento
             PaymentLog log = new PaymentLog();
-            log.setId(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE);
             log.setStatus("PREFERENCE_CREATED");
             log.setUserEmail(dto.getUserEmail());
             log.setTimestamp(LocalDateTime.now());
@@ -79,7 +79,7 @@ public class PaymentService {
             return new PaymentResponseDTO(
                     preference.getId(),        //  ID único de la preferencia
             //        preference.getInitPoint()  //  devuelve URL para redirigir al pago
-                    preference.getSandboxInitPoint()  // para pruebas
+                    preference.getSandboxInitPoint()  // devuelve URL para redirigir al pago para pruebas
             );
 
 

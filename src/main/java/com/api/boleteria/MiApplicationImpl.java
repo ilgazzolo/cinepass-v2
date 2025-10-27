@@ -10,7 +10,7 @@ public class MiApplicationImpl {
 	public static void main(String[] args) {
 
 		// Agrega credenciales
-		MercadoPagoConfig.setAccessToken("MP_ACCESS_TOKEN");
+		MercadoPagoConfig.setAccessToken(System.getenv("MP_ACCESS_TOKEN"));
 
 		SpringApplication.run(MiApplicationImpl.class, args);
 

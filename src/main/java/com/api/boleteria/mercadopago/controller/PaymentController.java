@@ -4,6 +4,7 @@ import com.api.boleteria.mercadopago.dto.PaymentRequestDTO;
 import com.api.boleteria.mercadopago.dto.PaymentResponseDTO;
 import com.api.boleteria.mercadopago.service.PaymentService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -22,17 +23,20 @@ public class PaymentController {
 
 
     @PostMapping("/create")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
     public ResponseEntity<?> createPreference(@RequestBody PaymentRequestDTO dto) {
-
         try{
             PaymentResponseDTO response = paymentService.createPreference(dto);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error al generar la preferencia");
-        }
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Error al generar la preferencia. ");
 
+        } finally {
+
+        }
     }
     /*
         // Angular ejemplo
