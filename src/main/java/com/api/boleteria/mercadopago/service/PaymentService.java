@@ -23,6 +23,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Service class responsible for managing payment operations and interactions
+ * with the Mercado Pago API. It handles the creation of payment preferences,
+ * status updates, and webhook notifications, while maintaining logs of all
+ * payment-related events for audit and debugging purposes.
+ */
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -30,6 +36,16 @@ public class PaymentService {
     private final IPaymentRepository paymentRepository;
     private final IPaymentLogRepository paymentLogRepository;
 
+    /**
+     * Creates a payment preference in Mercado Pago using the provided payment details.
+     * This method configures the item, return URLs, and notification URL,
+     * then sends a request to Mercado Pago to generate the payment preference.
+     * It also logs the creation of the preference for tracking purposes.
+     *
+     * @param dto The {@link PaymentRequestDTO} containing payment information such as title, description, quantity, price, and user email.
+     * @return A {@link PaymentResponseDTO} containing the preference ID and sandbox payment URL to redirect the user.
+     * @throws RuntimeException if any error occurs during the creation of the payment preference.
+     */
     public PaymentResponseDTO createPreference(PaymentRequestDTO dto) {
         try {
             MercadoPagoConfig.setAccessToken(System.getenv("MP_ACCESS_TOKEN"));
@@ -75,16 +91,25 @@ public class PaymentService {
 
             return new PaymentResponseDTO(
                     preference.getId(),        //  ID único de la preferencia
-            //        preference.getInitPoint()  //  devuelve URL para redirigir al pago
+                    //        preference.getInitPoint()  //  devuelve URL para redirigir al pago
                     preference.getSandboxInitPoint()  // devuelve URL para redirigir al pago para pruebas
             );
 
 
         } catch (Exception e) {
-            throw new RuntimeException("Error al crear preferencia de pago: " + e.getMessage());
+            throw new RuntimeException("Error creating payment preference: " + e.getMessage());
         }
     }
 
+    /**
+     * Updates the payment status in the database using the Mercado Pago payment ID.
+     * If the status provided is invalid, it defaults to PENDING.
+     * Also creates a log entry recording the update operation.
+     *
+     * @param mpPaymentId The Mercado Pago payment ID associated with the transaction.
+     * @param mpStatus The current payment status (e.g., approved, pending, rejected).
+     * @param userEmail The email of the user associated with the payment.
+     */
     public void updatePaymentStatus(String mpPaymentId, String mpStatus, String userEmail) {
         Payment payment = paymentRepository.findByMpPaymentId(mpPaymentId)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
@@ -108,6 +133,14 @@ public class PaymentService {
         paymentLogRepository.save(log);
     }
 
+    /**
+     * Processes webhook notifications received from Mercado Pago.
+     * Retrieves payment details using the Mercado Pago API, updates the corresponding
+     * payment status in the database, and logs the notification event.
+     * In case of errors, the failure is recorded in the log with an error message.
+     *
+     * @param mpPaymentId The Mercado Pago payment ID included in the webhook notification.
+     */
     public void processWebhookNotification(String mpPaymentId) {
         try {
             MercadoPagoConfig.setAccessToken(System.getenv("MP_ACCESS_TOKEN"));
@@ -134,4 +167,5 @@ public class PaymentService {
     }
 
 }
+
 

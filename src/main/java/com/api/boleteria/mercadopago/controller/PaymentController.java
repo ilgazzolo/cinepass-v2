@@ -3,25 +3,34 @@ package com.api.boleteria.mercadopago.controller;
 import com.api.boleteria.mercadopago.dto.PaymentRequestDTO;
 import com.api.boleteria.mercadopago.dto.PaymentResponseDTO;
 import com.api.boleteria.mercadopago.service.PaymentService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
 
 
+/**
+ * REST controller responsible for managing payment-related endpoints.
+ * Handles creation of payment preferences, success/failure/pending callbacks,
+ * and webhook notifications from Mercado Pago.
+ */
 @RestController
 @RequestMapping("/api/payments")
+@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class PaymentController {
 
     private final PaymentService paymentService;
 
-    public PaymentController(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
-
-
+    /**
+     * Creates a Mercado Pago payment preference using the data provided by the client.
+     * Accessible only to users with roles {@code ADMIN} or {@code CLIENT}.
+     *
+     * @param dto The {@link PaymentRequestDTO} containing details for creating the payment preference.
+     * @return A {@link ResponseEntity} containing the {@link PaymentResponseDTO} on success,
+     *         or an error message if something goes wrong.
+     */
     @PostMapping("/create")
     @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
     public ResponseEntity<?> createPreference(@RequestBody PaymentRequestDTO dto) {
@@ -32,25 +41,42 @@ public class PaymentController {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Error al generar la preferencia. ");
+            return ResponseEntity.internalServerError().body("Error generating payment preference.");
         }
     }
-    /*
-        // Angular ejemplo
-        this.http.post('/api/payments/create', payload).subscribe((res: any) => {
-          window.location.href = res.initPoint; // redirige a Mercado Pago
-        });
-     */
 
+
+    /**
+     * Endpoint called when a payment is successfully completed.
+     *
+     * @return A confirmation message indicating successful payment.
+     */
     @GetMapping("/success")
     public String success() { return "Payment success"; }
 
+    /**
+     * Endpoint called when a payment fails.
+     *
+     * @return A message indicating payment failure.
+     */
     @GetMapping("/failure")
     public String failure() { return "Payment failure"; }
 
+    /**
+     * Endpoint called when a payment is still pending.
+     *
+     * @return A message indicating the payment is pending.
+     */
     @GetMapping("/pending")
     public String pending() { return "Payment pending"; }
 
+    /**
+     * Receives webhook notifications from Mercado Pago.
+     * Extracts the payment ID and delegates processing to the {@link PaymentService}.
+     *
+     * @param payload The notification payload containing payment information.
+     * @return A {@link ResponseEntity} indicating whether the notification was processed successfully.
+     */
     @PostMapping("/notification")
     public ResponseEntity<String> receiveNotification(@RequestBody Map<String, Object> payload) {
         try {
@@ -69,6 +95,7 @@ public class PaymentController {
         }
     }
 }
+
 
 
 

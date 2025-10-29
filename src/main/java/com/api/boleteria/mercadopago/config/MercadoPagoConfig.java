@@ -10,9 +10,4 @@ public class MercadoPagoConfig {
     private String publicKey;
 }
 
-//  Y en application.yml:
-/*mercadopago:
-access-token: ${MP_ACCESS_TOKEN}
-public-key: ${MP_PUBLIC_KEY}*/
-
 
