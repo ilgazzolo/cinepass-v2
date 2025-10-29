@@ -33,9 +33,6 @@ public class PaymentController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Error al generar la preferencia. ");
-
-        } finally {
-
         }
     }
     /*
@@ -46,22 +43,31 @@ public class PaymentController {
      */
 
     @GetMapping("/success")
-    public String success() { return "Pago aprobado"; }
+    public String success() { return "Payment success"; }
 
     @GetMapping("/failure")
-    public String failure() { return "Pago fallido"; }
+    public String failure() { return "Payment failure"; }
 
     @GetMapping("/pending")
-    public String pending() { return "Pago pendiente"; }
+    public String pending() { return "Payment pending"; }
 
-    @PostMapping("/webhook")
-    public ResponseEntity<String> webhook(@RequestBody String body,
-                                          @RequestParam Map<String,String> params) {
-        System.out.println("Webhook recibido: " + body + " params: " + params);
-        // Aquí podrías consultar Mercado Pago API y actualizar tu DB.
-        return ResponseEntity.ok("OK");
+    @PostMapping("/notification")
+    public ResponseEntity<String> receiveNotification(@RequestBody Map<String, Object> payload) {
+        try {
+            // El campo "data.id" contiene el ID del pago de Mercado Pago
+            if (payload.containsKey("data")) {
+                Map<String, Object> data = (Map<String, Object>) payload.get("data");
+                String mpPaymentId = String.valueOf(data.get("id"));
+
+                // Llamamos al servicio para procesar el pago
+                paymentService.processWebhookNotification(mpPaymentId);
+            }
+
+            return ResponseEntity.ok("Notification received");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error processing notification: " + e.getMessage());
+        }
     }
-
 }
 
 
