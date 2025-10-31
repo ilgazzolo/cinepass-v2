@@ -2,6 +2,7 @@ package com.api.boleteria.controller;
 
 import com.api.boleteria.dto.detail.TicketDetailDTO;
 import com.api.boleteria.dto.request.TicketRequestDTO;
+import com.api.boleteria.model.Ticket;
 import com.api.boleteria.service.TicketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

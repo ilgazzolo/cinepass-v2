@@ -17,4 +17,6 @@ public class TicketRequestDTO {
         @NotNull(message = "Debe especificar la cantidad de tickets.")
         @Min(value = 1, message = "Debe comprar al menos un ticket.")
         private Integer quantity;
+
+        //agregar precio final(amout), id de peli, array string(butacas)
 }

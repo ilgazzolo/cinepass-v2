@@ -1,9 +1,6 @@
 package com.api.boleteria.log;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,6 +14,7 @@ public class PaymentLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String status;
+    @Column(unique = true)
     private String mpOperationId;
     private String userEmail;
     private LocalDateTime timestamp;

@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,23 +20,28 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ID de pago que devuelve Mercado Pago
-    @Column(nullable = false, unique = true)
-    private String mpPaymentId;
+    @Column(unique = true, nullable = false)
+    private String mpPaymentId; // ID de Mercado Pago
 
-    // Estado del pago (approved, pending, failure)
+    @Column(nullable = false)
+    private String userEmail;   // Email del usuario que realizó el pago
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StatusPayment status;
+    private StatusPayment status;    // Estado del pago (approved, pending, failure)
 
-    // Monto del pago
-    private Double amount;
+    private BigDecimal amount;  // Monto del pago
 
-    // Fecha de creación o actualización del pago
+    private LocalDateTime createdAt;    // Fecha de creación del pago
+
+    private LocalDateTime updatedAt;    // Fecha de actualización del pago
+
     private LocalDateTime date;
 
-    // Relación con el ticket asociado (1 pago -> 1 ticket)
     @OneToOne
-    @JoinColumn(name = "ticket_id")
+    @JoinColumn(name = "ticket_id")    // Relación con el ticket asociado (1 pago -> 1 ticket)
     private Ticket ticket;
+
 }
+
+

@@ -1,8 +1,11 @@
 package com.api.boleteria.mercadopago.controller;
 
+import com.api.boleteria.log.PaymentLog;
 import com.api.boleteria.mercadopago.dto.PaymentRequestDTO;
 import com.api.boleteria.mercadopago.dto.PaymentResponseDTO;
 import com.api.boleteria.mercadopago.service.PaymentService;
+import com.api.boleteria.model.Payment;
+import com.mercadopago.client.payment.PaymentClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

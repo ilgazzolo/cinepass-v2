@@ -90,7 +90,7 @@ public class TicketService {
                 .mapToObj(i -> {
                     Ticket ticket = mapToEntity(user, function);
                     function.getTickets().add(ticket); // setteo la relacion en ambos lados
-                    user.getTickets().add(ticket); // setteo la relacion en ambosl ados
+                    user.getTickets().add(ticket); // setteo la relacion en ambos lados
                     return ticketRepository.save(ticket);
                 })
                 .toList();
@@ -102,6 +102,42 @@ public class TicketService {
     }
 
 
+    @Transactional
+    public List<Ticket> buyTicketsEntity(TicketRequestDTO dto) {
+        TicketValidator.validateFields(dto);
+
+        User user = userService.findAuthenticatedUser();
+
+        Function function = functionRepository.findById(dto.getFunctionId())
+                .orElseThrow(() -> new NotFoundException("Función no encontrada."));
+
+        if (!function.getCinema().getEnabled()) {
+            throw new BadRequestException("La sala asociada a la función está inhabilitada.");
+        }
+
+        TicketValidator.validateCapacity(function, dto.getQuantity());
+
+        Card card = cardRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new NotFoundException("El usuario " + user.getUsername() + " no tiene una tarjeta registrada."));
+
+        TicketValidator.validateCardBalance(card, dto.getQuantity());
+
+        double totalAmount = TICKET_PRICE * dto.getQuantity();
+
+        card.setBalance(card.getBalance() - totalAmount);
+        function.setAvailableCapacity(function.getAvailableCapacity() - dto.getQuantity());
+        cardRepository.save(card);
+        functionRepository.save(function);
+
+        return IntStream.range(0, dto.getQuantity())
+                .mapToObj(i -> {
+                    Ticket ticket = mapToEntity(user, function);
+                    function.getTickets().add(ticket);
+                    user.getTickets().add(ticket);
+                    return ticketRepository.save(ticket);
+                })
+                .toList();
+    }
 
 
 

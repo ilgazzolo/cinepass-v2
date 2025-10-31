@@ -1,17 +1,23 @@
 package com.api.boleteria.mercadopago.service;
 
+import com.api.boleteria.dto.detail.TicketDetailDTO;
+import com.api.boleteria.dto.request.TicketRequestDTO;
 import com.api.boleteria.log.PaymentLog;
 import com.api.boleteria.mercadopago.dto.PaymentRequestDTO;
 import com.api.boleteria.mercadopago.dto.PaymentResponseDTO;
 import com.api.boleteria.model.Payment;
+import com.api.boleteria.model.Ticket;
 import com.api.boleteria.model.enums.StatusPayment;
 import com.api.boleteria.repository.IPaymentLogRepository;
 import com.api.boleteria.repository.IPaymentRepository;
+import com.api.boleteria.repository.ITicketRepository;
+import com.api.boleteria.service.TicketService;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
+import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.resources.payment.PaymentStatus;
 import com.mercadopago.resources.preference.Preference;
 import com.mercadopago.MercadoPagoConfig;
@@ -35,6 +41,8 @@ public class PaymentService {
 
     private final IPaymentRepository paymentRepository;
     private final IPaymentLogRepository paymentLogRepository;
+    private final ITicketRepository ticketRepository;
+    private final TicketService ticketService;
 
     /**
      * Creates a payment preference in Mercado Pago using the provided payment details.
@@ -69,6 +77,7 @@ public class PaymentService {
                     .failure("https://larhonda-progravid-caressively.ngrok-free.dev/failure")
                     .build();
 
+
             // Crear preferencia con back_urls y auto_return
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(List.of(itemRequest))
@@ -95,43 +104,61 @@ public class PaymentService {
                     preference.getSandboxInitPoint()  // devuelve URL para redirigir al pago para pruebas
             );
 
-
+        } catch (MPApiException apiException) {
+            System.out.println("Status Code: " + apiException.getStatusCode());
+            System.out.println("Error Details: " + apiException.getApiResponse().getContent());
+            apiException.printStackTrace();
+            throw new RuntimeException("Error generating payment preference.");
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Error creating payment preference: " + e.getMessage());
         }
     }
 
     /**
-     * Updates the payment status in the database using the Mercado Pago payment ID.
-     * If the status provided is invalid, it defaults to PENDING.
-     * Also creates a log entry recording the update operation.
+     * Updates (or creates) a payment record in the database based on Mercado Pago webhook data.
+     * Ensures the payment status and logs are consistent.
      *
-     * @param mpPaymentId The Mercado Pago payment ID associated with the transaction.
-     * @param mpStatus The current payment status (e.g., approved, pending, rejected).
-     * @param userEmail The email of the user associated with the payment.
+     * @param mpPaymentId The Mercado Pago payment ID.
+     * @param mpStatus The payment status from Mercado Pago (e.g., "approved", "pending", "rejected").
+     * @param userEmail The payer's email associated with the payment.
      */
-    public void updatePaymentStatus(String mpPaymentId, String mpStatus, String userEmail) {
+    public Payment updatePaymentStatus(String mpPaymentId, String mpStatus, String userEmail) {
+        // Intentar obtener el pago existente
         Payment payment = paymentRepository.findByMpPaymentId(mpPaymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found"));
+                .orElseGet(() -> {
+                    // Si no existe, crear uno nuevo
+                    Payment newPayment = new Payment();
+                    newPayment.setMpPaymentId(mpPaymentId);
+                    newPayment.setUserEmail(userEmail);
+                    newPayment.setCreatedAt(LocalDateTime.now());
+                    return newPayment;
+                });
 
+        // Determinar el nuevo estado
         StatusPayment newStatusEnum;
         try {
             newStatusEnum = StatusPayment.valueOf(mpStatus.toUpperCase());
         } catch (IllegalArgumentException e) {
-            newStatusEnum = StatusPayment.PENDING; // valor por defecto
+            newStatusEnum = StatusPayment.PENDING;
         }
 
+        // Actualizar y guardar
         payment.setStatus(newStatusEnum);
+        payment.setUpdatedAt(LocalDateTime.now());
         paymentRepository.save(payment);
 
+        // Registrar log del cambio de estado
         PaymentLog log = new PaymentLog();
-        log.setId(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE);
         log.setMpOperationId(mpPaymentId);
         log.setStatus(newStatusEnum.name());
         log.setUserEmail(userEmail);
         log.setTimestamp(LocalDateTime.now());
         paymentLogRepository.save(log);
+
+        return payment; // Devolver el Payment actualizado
     }
+
 
     /**
      * Processes webhook notifications received from Mercado Pago.
@@ -143,29 +170,43 @@ public class PaymentService {
      */
     public void processWebhookNotification(String mpPaymentId) {
         try {
+            // Inicializar el SDK de Mercado Pago
             MercadoPagoConfig.setAccessToken(System.getenv("MP_ACCESS_TOKEN"));
 
-            // Traer los datos del pago desde la API de MP
-            PaymentClient client = new com.mercadopago.client.payment.PaymentClient();
-            com.mercadopago.resources.payment.Payment mpPayment = client.get(Long.parseLong(mpPaymentId));
+            // Obtener el pago desde la API de Mercado Pago
+            PaymentClient paymentClient = new PaymentClient();
+            com.mercadopago.resources.payment.Payment mpPayment =
+                    paymentClient.get(Long.parseLong(mpPaymentId));
 
-            String status = mpPayment.getStatus();
-            String payerEmail = mpPayment.getPayer() != null ? mpPayment.getPayer().getEmail() : "unknown";
+            // Extraer datos necesarios
+            String mpStatus = mpPayment.getStatus();
+            String userEmail = mpPayment.getPayer().getEmail();
 
-            // Actualizar estado en DB y registrar log
-            updatePaymentStatus(mpPaymentId, status, payerEmail);
+            System.out.println("Payment updated from webhook: " + mpPaymentId + " - " + mpStatus);
 
+            // Actualizar o crear el Payment
+            Payment payment = updatePaymentStatus(mpPaymentId, mpStatus, userEmail);
+
+            // Solo crear ticket si el pago fue aprobado
+            if (StatusPayment.APPROVED.equals(payment.getStatus())) {
+                TicketRequestDTO ticketDTO = new TicketRequestDTO();
+                ticketDTO.setFunctionId(payment.getTicket().getFunction().getId());
+                ticketDTO.setQuantity(1);
+                // agregar ticketDTO.setAmount(payment.getAmount());
+
+                // Usar el método que devuelve entidades
+                List<Ticket> tickets = ticketService.buyTicketsEntity(ticketDTO);
+
+                payment.setTicket(tickets.get(0));
+                paymentRepository.save(payment);
+            }
+        } catch (MPApiException e) {
+            System.out.println("Error from Mercado Pago API: " + e.getApiResponse().getContent());
+            e.printStackTrace();
         } catch (Exception e) {
-            PaymentLog log = new PaymentLog();
-            log.setId(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE);
-            log.setMpOperationId(mpPaymentId);
-            log.setStatus("WEBHOOK_ERROR");
-            log.setError(e.getMessage());
-            log.setTimestamp(LocalDateTime.now());
-            paymentLogRepository.save(log);
+            e.printStackTrace();
         }
     }
-
 }
 
 
