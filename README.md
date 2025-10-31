@@ -1,20 +1,37 @@
-# Cine Pass Management API
-**CinePass** es una aplicación web desarrollada con Spring Boot y arquitectura MVC, conectada a una base de datos mediante Spring Data JPA, diseñada para gestionar la venta de boletos de cine online de manera agil y segura.
+# CineMass - API de Pagos (Spring Boot + Mercado Pago)
+
+Backend del sistema **CineMass**, desarrollado en **Spring Boot** y arquitectura MVC con integración a **Mercado Pago Checkout Pro (Sandbox)**, conectada a una base de datos mediante Spring Data JPA, diseñada para gestionar la venta de boletos de cine online de manera agil y segura.
+  
+Permite generar preferencias de pago y probar transacciones reales desde el entorno local usando **Ngrok**.
 
 ---
+
 ## Tecnologias utilizadas
-- Java 21
-- Spring Boot
-- Spring Web
-- Spring Data JPA
+- Java 17+
+- Spring Boot 3.x
 - Spring Security
 - Lombok
 - MySQL
 - Hibernate
 - Maven
-- PostMan (Para pruebas)
+- Mercado Pago SDK Java
+- **Ngrok** (para exponer el backend local)
+- Postman (para pruebas de endpoints)
 
 ---
+
+## Requisitos previos
+
+Antes de ejecutar el proyecto, asegurate de tener instalado:
+
+- [Java 17 o superior](https://adoptium.net/)
+- [Maven](https://maven.apache.org/)
+- [MySQL](https://www.mysql.com/)
+- [Ngrok](https://ngrok.com/)
+- [Postman](https://www.postman.com/)
+
+---
+
 ## Arquitectura
 La aplicacion siguen el patrón **MVC** (Modelo - Vista - Controlador) con una estructura modular y escalable:
 
@@ -25,6 +42,10 @@ La aplicacion siguen el patrón **MVC** (Modelo - Vista - Controlador) con una e
     │   └── com.api.boletería
     │       ├── config
     │       ├── controller
+    │       ├── mercadopago
+    │    	 	 ├──  	controller
+    │    	 	 ├──  	dto
+    │    	 	 ├──  	service
     │       ├── dto
     │    	 	 ├──  	detail
     │    	 	 ├──  	list
@@ -39,6 +60,7 @@ La aplicacion siguen el patrón **MVC** (Modelo - Vista - Controlador) con una e
         └── application.properties
 ```
 ---
+
 ## Seguridad 
 La seguridad de la API se configuró usando `SecurityFilterChain` con JWT y manejo de sesión stateless. La autenticación se maneja mediante **HTTP Basic Auth** usando `Spring Security`. Algunas rutas están protegidas y requieren estar autenticado para acceder.
 
@@ -56,20 +78,58 @@ La seguridad de la API se configuró usando `SecurityFilterChain` con JWT y mane
 
 ## Como correr el proyecto
  1. Clonar el repositorio:   
-    ```bash
-    git clone https://github.com/ilgazzolo/CinePass-Management.git
-    cd CinePass-Management  
-    ```
+```bash
+git clone https://github.com/ilgazzolo/cinepass-v2.git
+cd cinepass-v2  
+```
  2. Configurar la base de datos en src/main/application.properties:
-    ```bash
-    spring.datasource.url=jdbc:mysql://localhost:3306/cinepass_db
-    spring.datasource.username=tu_usuario
-    spring.datasource.password=tu_contraseña
-    spring.jpa.hibernate.ddl-auto=create
-    ```
+```bash
+spring.datasource.url=jdbc:mysql://localhost:3306/cinepass_db
+spring.datasource.username=tu_usuario
+spring.datasource.password=tu_contraseña
+spring.jpa.hibernate.ddl-auto=create
+```
  3. Ejecuta la aplicación:
-    ```bash
-    ./mvnw spring-boot:run
+```bash
+./mvnw spring-boot:run
+```
+---
+
+## Configuración inicial
+  1. Iniciar el backend
+```bash
+mvn spring-boot:run
+```
+  2. Iniciar Ngrok
+```bash
+ngrok http 8080
+```
+  Vas a obtener una salida como esta:
+```bash
+Forwarding  https://mi-tunel-ngrok.ngrok-free.dev -> http://localhost:8080
+```
+  Esa URL pública será la que uses en Mercado Pago y Postman.
+  
+  3. Actualizar las URLs de Mercado Pago, abri el archivo:
+  ```bash
+  src/main/java/com/api/boleteria/service/PaymentService.java
+  ```
+  Y reemplazá las rutas por las tuyas de ngrok:
+  ```bash
+PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
+    .success("https://<TU_TUNEL>.ngrok-free.dev/success")
+    .pending("https://<TU_TUNEL>.ngrok-free.dev/pending")
+    .failure("https://<TU_TUNEL>.ngrok-free.dev/failure")
+    .build();
+
+PreferenceRequest preferenceRequest = PreferenceRequest.builder()
+    .items(List.of(itemRequest))
+    .backUrls(backUrls)
+    .notificationUrl("https://<TU_TUNEL>.ngrok-free.dev/api/payments/notification")
+    .autoReturn("approved")
+    .build();
+```
+  El dominio de ngrok expira cada vez que se reinicia, por lo tanto, deben actualizar las URLs cada vez que lo vuelvan a ejecutar.
 
 ---
 
@@ -78,7 +138,6 @@ Este proyecto es de uso académico. Todos los derechos reservados.
 
 Luciano Gazzolo  
 Sebastian Aguilera  
-Tomás Jopia  
 Tomás Constantini  
 Nahuel Ramirez  
 
