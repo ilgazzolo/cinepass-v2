@@ -5,9 +5,14 @@ import java.util.List;
 public record MovieDetailDTO(
         Long id,
         String title,
-        Integer duration,
-        String genre,
-        String director,
-        String rating,
-        String synopsis
+        String originalLanguage,
+        String releaseDate,
+        int runtime,
+        List<String> genres,
+        String overview,
+        String imdbId,
+        double voteAverage,
+        int voteCount,
+        String posterUrl,
+        String bannerUrl
 ){}

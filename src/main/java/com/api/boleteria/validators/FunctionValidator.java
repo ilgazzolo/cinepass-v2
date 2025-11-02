@@ -1,10 +1,10 @@
 package com.api.boleteria.validators;
 
+import com.api.boleteria.dto.detail.MovieDetailDTO;
 import com.api.boleteria.dto.request.FunctionRequestDTO;
 import com.api.boleteria.exception.BadRequestException;
 import com.api.boleteria.model.Cinema;
 import com.api.boleteria.model.Function;
-import com.api.boleteria.model.Movie;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -70,13 +70,13 @@ public class FunctionValidator {
      * @param functionsInTheCinema Lista de funciones existentes en esa sala.
      * @throws BadRequestException si hay superposición de horarios.
      */
-    public static void validateSchedule(FunctionRequestDTO dto, Movie movie, List<Function> functionsInTheCinema) {
+    public static void validateSchedule(FunctionRequestDTO dto, MovieDetailDTO movie, List<Function> functionsInTheCinema) {
         LocalDateTime newStart = dto.getShowtime();
-        LocalDateTime newEnd = newStart.plusMinutes(movie.getDuration());
+        LocalDateTime newEnd = newStart.plusMinutes(movie.runtime());
 
         for (Function f : functionsInTheCinema) {
             LocalDateTime existingStart = f.getShowtime();
-            LocalDateTime existingEnd = existingStart.plusMinutes(f.getMovie().getDuration());
+            LocalDateTime existingEnd = existingStart.plusMinutes(f.getRunTime());
 
             boolean overlap = newStart.isBefore(existingEnd) && existingStart.isBefore(newEnd);
             if (overlap) {

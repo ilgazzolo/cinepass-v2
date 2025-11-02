@@ -16,7 +16,6 @@ public class FunctionRequestDTO {
     private LocalDateTime showtime;
 
     @NotNull(message = "La sala es obligatoria")
-    @Positive(message = "La id del cinema debe ser positiva")
     private Long cinemaId;
 
     @NotNull(message = "La pelicula es obligatoria")

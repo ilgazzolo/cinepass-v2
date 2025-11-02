@@ -1,6 +1,7 @@
 package com.api.boleteria.service;
 
 import com.api.boleteria.dto.detail.FunctionDetailDTO;
+import com.api.boleteria.dto.detail.MovieDetailDTO;
 import com.api.boleteria.dto.list.FunctionListDTO;
 import com.api.boleteria.dto.request.FunctionRequestDTO;
 import com.api.boleteria.exception.BadRequestException;
@@ -10,13 +11,15 @@ import com.api.boleteria.model.enums.ScreenType;
 import com.api.boleteria.repository.ICardRepository;
 import com.api.boleteria.repository.ICinemaRepository;
 import com.api.boleteria.repository.IFunctionRepository;
-import com.api.boleteria.repository.IMovieRepository;
 import com.api.boleteria.validators.CinemaValidator;
 import com.api.boleteria.validators.FunctionValidator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -31,8 +34,8 @@ public class FunctionService {
 
     private final IFunctionRepository functionRepo;
     private final ICinemaRepository cinemaRepo;
-    private final IMovieRepository movieRepo;
     private final ICardRepository cardRepo;
+    private final MovieService movieService;
 
 
     //-------------------------------SAVE--------------------------------//
@@ -63,8 +66,19 @@ public class FunctionService {
                     .orElseThrow(() -> new NotFoundException("No existe la sala con ID: " + entity.getCinemaId()));
             FunctionValidator.validateEnabledCinema(cinema);
 
-            Movie movie = movieRepo.findById(entity.getMovieId())
-                    .orElseThrow(() -> new NotFoundException("No existe la película con ID: " + entity.getMovieId()));
+            MovieDetailDTO movie;
+
+            try {
+                movie = movieService.getMovieById(entity.getMovieId());
+
+                if (movie == null) {
+                    throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
+                }
+            } catch (IOException e) {
+                throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
+            }
+
+
 
             List<Function> functionsInTheCinema = functionRepo.findByCinemaId(entity.getCinemaId());
             FunctionValidator.validateSchedule(entity, movie, functionsInTheCinema);
@@ -72,7 +86,9 @@ public class FunctionService {
             Function function = mapToEntity(entity, cinema, movie);
 
             function.setCinema(cinema);
-            function.setMovie(movie);
+            function.setMovieId(movie.id());
+            function.setMovieName(movie.title());
+            function.setRunTime(movie.runtime());
 
             Function saved = functionRepo.save(function);
 
@@ -146,8 +162,15 @@ public class FunctionService {
     public List<FunctionDetailDTO> findByMovieIdAndAvailableCapacity(Long movieId) {
         FunctionValidator.validateMovieId(movieId);
 
-        if (!movieRepo.existsById(movieId)) {
-            throw new NotFoundException("La película con ID " + movieId + " no fue encontrada.");
+        MovieDetailDTO movie;
+
+        try {
+            movie = movieService.getMovieById(movieId);
+            if (movie == null) {
+                throw new NotFoundException("No existe la película con ID: " + movieId);
+            }
+        } catch (IOException e) {
+            throw new NotFoundException("No existe la película con ID: " + movieId);
         }
 
         List<Function> functions = functionRepo
@@ -251,16 +274,26 @@ public class FunctionService {
                 .orElseThrow(() -> new NotFoundException("No existe la sala ingresada."));
         FunctionValidator.validateEnabledCinema(cinema);
 
-        Movie movie = movieRepo.findById(entity.getMovieId())
-                .orElseThrow(() -> new NotFoundException("No existe la película ingresada."));
+        MovieDetailDTO movie;
+
+        try {
+            movie = movieService.getMovieById(entity.getMovieId());
+            if (movie == null) {
+                throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
+            }
+        } catch (IOException e) {
+            throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
+        }
 
         List<Function> functionsInCinema = functionRepo.findByCinemaId(entity.getCinemaId());
         FunctionValidator.validateSchedule(entity, movie, functionsInCinema);
 
         function.setShowtime(entity.getShowtime());
         function.setCinema(cinema);
-        function.setMovie(movie);
+        function.setMovieId(movie.id());
+        function.setMovieName(movie.title());
         function.setAvailableCapacity(cinema.getSeatCapacity());
+        function.setRunTime(movie.runtime());
 
         Function updated = functionRepo.save(function);
         return mapToDetailDTO(updated);
@@ -293,7 +326,7 @@ public class FunctionService {
                     .orElseThrow(() -> new NotFoundException("El usuario " + user.getUsername() + " no tiene una tarjeta registrada."));
 
             // Reintegrar saldo
-            card.setBalance(card.getBalance() + ticket.getTicketPrice());
+            card.setBalance(card.getBalance() + ticket.getTicketPrice().doubleValue());
             cardRepo.save(card);
         }
 
@@ -315,9 +348,10 @@ public class FunctionService {
                 function.getShowtime().format(DateTimeFormatter.ISO_DATE_TIME),
                 function.getCinema().getId(),
                 function.getCinema().getName(),
-                function.getMovie().getId(),
-                function.getMovie().getTitle(),
-                function.getAvailableCapacity()
+                function.getMovieId(),
+                function.getMovieName(),
+                function.getAvailableCapacity(),
+                function.getRunTime()
         );
     }
 
@@ -332,7 +366,9 @@ public class FunctionService {
                 function.getShowtime().toLocalDate(),
                 function.getShowtime().toLocalTime(),
                 function.getCinema().getId(),
-                function.getMovie().getId()
+                function.getMovieId(),
+                function.getMovieName(),
+                function.getRunTime()
         );
     }
 
@@ -347,12 +383,13 @@ public class FunctionService {
      * @param movie Entidad Movie asociada a la función.
      * @return Entidad Function creada a partir del DTO y las entidades asociadas.
      */
-    private Function mapToEntity(FunctionRequestDTO entity, Cinema cinema, Movie movie) {
+    private Function mapToEntity(FunctionRequestDTO entity, Cinema cinema, MovieDetailDTO movie) {
         Function function = new Function();
         function.setShowtime(entity.getShowtime());
         function.setCinema(cinema);
         function.setAvailableCapacity(cinema.getSeatCapacity());
-        function.setMovie(movie);
+        function.setMovieId(movie.id());
+        function.setMovieName(movie.title());
         return function;
     }
 

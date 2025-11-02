@@ -2,7 +2,6 @@ package com.api.boleteria.controller;
 
 import com.api.boleteria.dto.detail.MovieDetailDTO;
 import com.api.boleteria.dto.list.MovieListDTO;
-import com.api.boleteria.dto.request.MovieRequestDTO;
 import com.api.boleteria.service.MovieService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -35,22 +35,22 @@ public class MovieController {
     @Autowired
     private MovieService movieService;
 
-
-    //-------------------------------CREATE--------------------------------//
-    /**
-     * Registra una o más películas.
-     *
-     * Este endpoint permite a un administrador cargar múltiples películas en una sola solicitud.
-     * Cada película es validada y registrada si no existe previamente una con el mismo título.
-     *
-     * @param entity Lista de DTOs con la información necesaria para crear las películas.
-     * @return ResponseEntity con la lista de películas creadas.
-     */
-    @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<MovieDetailDTO>> create(@Valid @RequestBody List<@Valid MovieRequestDTO> entity) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(movieService.createAll(entity));
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        try {
+            MovieDetailDTO movie = movieService.getMovieById(id);
+            if (movie == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("La película con id " + id + " no fue encontrada");
+            }
+            return ResponseEntity.ok(movie);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body("Error al obtener los datos de la película: " + e.getMessage());
+        }
     }
+
 
 
 
@@ -59,7 +59,7 @@ public class MovieController {
      * Obtiene la lista de todas las películas.
      *
      */
-
+/*
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
     public ResponseEntity<List<MovieListDTO>> getAll() {
@@ -73,12 +73,12 @@ public class MovieController {
      * @param id Identificador de la película.
      * @return ResponseEntity con el detalle de la película.
      */
-
+/*
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
-    public ResponseEntity<MovieDetailDTO> getById(@PathVariable Long id){
-        return ResponseEntity.ok(movieService.findById(id));
-    }
+    public ResponseEntity<MovieDetailDTO> getById(@PathVariable String id){
+        return ResponseEntity.ok(movieService.getMovieById(id));
+    }*/
 
     /**
      * Obtiene una lista de películas que coinciden con el género especificado.
@@ -87,7 +87,7 @@ public class MovieController {
      * @param genre Género de las películas a buscar.
      * @return ResponseEntity con la lista de MovieListDTO si hay resultados,
      * o un 204 No Content si la lista está vacía.
-     */
+     *//*
     @GetMapping("/genre/{genre}")
     public ResponseEntity<List<MovieListDTO>> findByGenre(@PathVariable String genre) {
         List<MovieListDTO> movies = movieService.findByMovieGenre(genre);
@@ -104,7 +104,7 @@ public class MovieController {
      * @param entity DTO con la nueva información para la película.
      * @return ResponseEntity con el detalle actualizado de la película.
      */
-
+/*
     @PutMapping("/update/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MovieDetailDTO> update(@PathVariable Long id, @Valid @RequestBody MovieRequestDTO entity){
@@ -120,11 +120,11 @@ public class MovieController {
      *
      * @param id Identificador de la película a eliminar.
      * @return ResponseEntity con estado 200 OK y un mensaje confirmando la eliminación exitosa.
-     */
+     *//*
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> delete(@PathVariable Long id) {
         movieService.deleteById(id);
         return ResponseEntity.ok("Tu película fue eliminada correctamente");
-    }
+    }*/
 }

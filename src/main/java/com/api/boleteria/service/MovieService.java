@@ -1,20 +1,18 @@
 package com.api.boleteria.service;
 
-import com.api.boleteria.dto.detail.MovieDetailDTO;
-import com.api.boleteria.dto.list.MovieListDTO;
-import com.api.boleteria.dto.request.MovieRequestDTO;
-import com.api.boleteria.exception.BadRequestException;
-import com.api.boleteria.exception.NotFoundException;
-import com.api.boleteria.model.Function;
-import com.api.boleteria.model.Movie;
-import com.api.boleteria.repository.IFunctionRepository;
-import com.api.boleteria.repository.IMovieRepository;
-import com.api.boleteria.validators.MovieValidator;
-import lombok.RequiredArgsConstructor;
+import okhttp3.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import com.api.boleteria.dto.detail.MovieDetailDTO;
+
+import com.api.boleteria.exception.BadRequestException;
+import com.api.boleteria.exception.NotFoundException;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Servicio para gestionar operaciones relacionadas con Peliculas.
@@ -23,41 +21,80 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MovieService {
 
-    private final IMovieRepository movieRepository;
+
+    //-------------- API ----------------//
+
+    private final String token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIwY2NjYzU3YTFmN2VjZmM1ZjQ4OTNjYTRjOTVmMGU2YyIsIm5iZiI6MTc2MTU2ODIzMy40NDMsInN1YiI6IjY4ZmY2NWU5MmNiMjFmOTMwYWJjMDMxYiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.790N2rYi0hHOa4a3FOeC8bXhTZehMfJBu4n6cjcdLsE";
+    private final String baseUrl = "https://api.themoviedb.org/3";
+
+    private final OkHttpClient client = new OkHttpClient();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private Response makeRequest(String endpoint) throws IOException {
+        Request request = new Request.Builder()
+                .url(baseUrl + endpoint)
+                .addHeader("accept", "application/json")
+                .addHeader("Authorization", "Bearer " + token)
+                .build();
+        return client.newCall(request).execute();
+    }
 
 
-    //-------------------------------SAVE--------------------------------//
-
-    /**
-     * Crea una o más películas a partir de una lista de DTOs.
-     *
-     * Valida cada película antes de ser persistida, asegurándose de que no existan duplicados por título.
-     *
-     * @param requests Lista de DTOs con los datos de las películas a crear.
-     * @return Lista de MovieDetailDTO con la información de las películas creadas.
-     * @throws BadRequestException si alguna película ya existe o los datos son inválidos.
-     */
-    public List<MovieDetailDTO> createAll(List<MovieRequestDTO> requests) {
-        List<Movie> moviesToSave = new ArrayList<>();
-
-        for (MovieRequestDTO req : requests) {
-            MovieValidator.validateFields(req);
-
-            String title = req.getTitle().trim();
-
-            if (movieRepository.existsByTitle(title)) {
-                throw new BadRequestException("Ya existe una película con el título: " + title);
-            }
-
-            moviesToSave.add(mapToEntity(req));
+    public MovieDetailDTO getMovieById(Long id) throws IOException {
+        try (Response response = makeRequest("/movie/" + id + "?language=es-ES")) {
+            if (!response.isSuccessful()) throw new IOException("Error HTTP " + response.code());
+            String json = response.body().string();
+            return parseMovieDetailDto(json);
         }
 
-        List<Movie> saved = movieRepository.saveAll(moviesToSave);
-
-        return saved.stream()
-                .map(this::mapToDetailDTO)
-                .toList();
     }
+
+    private MovieDetailDTO parseMovieDetailDto(String json) throws IOException {
+        JsonNode node = objectMapper.readTree(json);
+
+        // Extraer los campos directamente
+        Long id = node.get("id").asLong();
+        String title = node.get("title").asText();
+        String originalLanguage = node.get("original_language").asText();
+        String releaseDate = node.get("release_date").asText();
+        int runtime = node.get("runtime").asInt();
+        String overview = node.get("overview").asText();
+        String imdbId = node.hasNonNull("imdb_id") ? node.get("imdb_id").asText() : null;
+        double voteAverage = node.get("vote_average").asDouble();
+        int voteCount = node.get("vote_count").asInt();
+
+        // Lista de géneros (TMDB devuelve un array de objetos con {id, name})
+        List<String> genres = new ArrayList<>();
+        if (node.has("genres")) {
+            for (JsonNode genreNode : node.get("genres")) {
+                genres.add(genreNode.get("name").asText());
+            }
+        }
+
+        // URLs de poster y banner
+        String posterPath = node.hasNonNull("poster_path") ? node.get("poster_path").asText() : null;
+        String bannerPath = node.hasNonNull("backdrop_path") ? node.get("backdrop_path").asText() : null;
+
+        String posterUrl = posterPath != null ? "https://image.tmdb.org/t/p/w500" + posterPath : null;
+        String bannerUrl = bannerPath != null ? "https://image.tmdb.org/t/p/w780" + bannerPath : null;
+
+        return new MovieDetailDTO(
+                id,
+                title,
+                originalLanguage,
+                releaseDate,
+                runtime,
+                genres,
+                overview,
+                imdbId,
+                voteAverage,
+                voteCount,
+                posterUrl,
+                bannerUrl
+        );
+    }
+
+
 
 
 
@@ -70,6 +107,7 @@ public class MovieService {
      * @return lista de MovieListDTO con la información de las películas encontradas.
      * @throws NotFoundException si no se encontraron películas para el género dado.
      */
+    /*
     public List<MovieListDTO> findByMovieGenre(String genre) {
         MovieValidator.validateGenre(genre);
         List<MovieListDTO> list = movieRepository.findByMovieGenre(genre).stream()
@@ -89,6 +127,7 @@ public class MovieService {
      * @return lista de MovieListDTO con la información de las películas encontradas.
      * @throws NotFoundException si no hay películas cargadas.
      */
+    /*
     public List<MovieListDTO> findAll() {
         List<MovieListDTO> list = movieRepository.findAll().stream()
                 .map(this::mapToListDTO)
@@ -107,13 +146,15 @@ public class MovieService {
      * @param id ID de la pelicula a buscar
      * @return MovieDetail con la informacion de la pelicula encontrada
      * @throws IllegalArgumentException si el ID es nulo o inválido.
-     */
+
     public MovieDetailDTO findById(Long id) {
         MovieValidator.validateId(id);
         Movie m = movieRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("La pelicula con ID: " + id + " no fue encontrada."));
         return mapToDetailDTO(m);
     }
+
+     */
 
 
 
@@ -131,7 +172,7 @@ public class MovieService {
      * @throws IllegalArgumentException si el ID es nulo o inválido.
      * @throws BadRequestException si ya existe otra película con el mismo título.
      * @throws NotFoundException si no se encuentra la película con el ID proporcionado.
-     */
+     *//*
     public MovieDetailDTO updateById(Long id, MovieRequestDTO req) {
         MovieValidator.validateId(id);  // Validamos el ID primero
         MovieValidator.validateFields(req);
@@ -164,7 +205,7 @@ public class MovieService {
     /**
      * elimina una pelicula segun un ID especificado
      * @param id ID de la pelicula a eliminar
-     */
+     *//*
     public void deleteById(Long id) {
         MovieValidator.validateId(id);
         if (!movieRepository.existsById(id)) {
@@ -181,7 +222,7 @@ public class MovieService {
      * Convierte una entidad Movie en un DTO detallado.
      * @param movie entidad Movie
      * @return MovieDetailDTO con todos los datos de la película
-     */
+     *//*
     private MovieDetailDTO mapToDetailDTO(Movie movie) {
         return new MovieDetailDTO(
                 movie.getId(),
@@ -193,12 +234,12 @@ public class MovieService {
                 movie.getSynopsis()
         );
     }
-
+*/
     /**
      * Convierte una entidad Movie en un DTO de lista.
      * @param movie entidad Movie
      * @return MovieListDTO con datos resumidos de la película
-     */
+     *//*
     private MovieListDTO mapToListDTO(Movie movie) {
         return new MovieListDTO(
                 movie.getId(),
@@ -232,13 +273,13 @@ public class MovieService {
      * @param title Título de la película a verificar.
      * @return true si existe una película con ese título, false en caso contrario.
      * @throws IllegalArgumentException si el título es nulo o está vacío.
-     */
+     *//*
     public boolean existsByTitle(String title) {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("El título no puede estar vacío.");
         }
         return movieRepository.existsByTitle(title.trim());
-    }
+    }*/
 }
 
 

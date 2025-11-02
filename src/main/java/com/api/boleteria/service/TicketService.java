@@ -60,7 +60,7 @@ public class TicketService {
      * @throws NotFoundException si no se encuentra la función o la tarjeta del usuario.
      * @throws BadRequestException si no hay capacidad suficiente o fondos en la tarjeta.
      */
-   /* @Transactional
+    @Transactional
     public List<TicketDetailDTO> buyTickets(TicketRequestDTO dto) {
         TicketValidator.validateFields(dto);
 
@@ -101,7 +101,7 @@ public class TicketService {
                 .map(this::mapToDetailDTO)
                 .toList();
     }
-    */
+
 
     @Transactional
     public Ticket createTicketFromPayment(TicketRequestDTO dto) {
@@ -191,7 +191,7 @@ public class TicketService {
     private TicketDetailDTO mapToDetailDTO(Ticket ticket) {
         return new TicketDetailDTO(
                 ticket.getId(),
-                ticket.getFunction().getMovie().getTitle(),
+                ticket.getFunction().getMovieName(),
                 ticket.getFunction().getCinema().getId(),
                 ticket.getPurchaseDateTime().toLocalDate().toString(),
                 ticket.getPurchaseDateTime().toLocalTime().toString(),

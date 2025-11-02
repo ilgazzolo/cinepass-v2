@@ -1,5 +1,6 @@
 package com.api.boleteria.model;
 
+import com.api.boleteria.dto.detail.MovieDetailDTO;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,9 +33,15 @@ public class Function {
     @JoinColumn(name = "cinema_id", nullable = false)
     private Cinema cinema;
 
-    @ManyToOne
-    @JoinColumn(name = "movie_id", nullable = false)
-    private Movie movie;
+    @Column(nullable = false)
+    private Long movieId;
+
+    @Column(nullable = false)
+    private String movieName;
+
+    @Column(nullable = false)
+    private Integer runTime;
+
 
     @OneToMany(mappedBy = "function", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets = new ArrayList<>();
