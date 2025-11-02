@@ -21,6 +21,7 @@ import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.resources.payment.PaymentStatus;
 import com.mercadopago.resources.preference.Preference;
 import com.mercadopago.MercadoPagoConfig;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
@@ -54,11 +55,13 @@ public class PaymentService {
      * @return A {@link PaymentResponseDTO} containing the preference ID and sandbox payment URL to redirect the user.
      * @throws RuntimeException if any error occurs during the creation of the payment preference.
      */
+    @Transactional
     public PaymentResponseDTO createPreference(PaymentRequestDTO dto) {
         try {
+            // Inicializar SDK de Mercado Pago
             MercadoPagoConfig.setAccessToken(System.getenv("MP_ACCESS_TOKEN"));
 
-            // Crear ítem de la preferencia
+            // Crear ítem de la preferencia usando unitPrice del DTO
             PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
                     .title(dto.getTitle())
                     .description(dto.getDescription())
@@ -77,7 +80,6 @@ public class PaymentService {
                     .failure("https://larhonda-progravid-caressively.ngrok-free.dev/failure")
                     .build();
 
-
             // Crear preferencia con back_urls y auto_return
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(List.of(itemRequest))
@@ -86,10 +88,8 @@ public class PaymentService {
                     .autoReturn("approved")
                     .build();
 
-
             PreferenceClient client = new PreferenceClient();
             Preference preference = client.create(preferenceRequest);
-
 
             // Registrar log del intento
             PaymentLog log = new PaymentLog();
@@ -98,10 +98,11 @@ public class PaymentService {
             log.setTimestamp(LocalDateTime.now());
             paymentLogRepository.save(log);
 
+            // Devolver DTO con la URL de sandbox para redirigir al pago
             return new PaymentResponseDTO(
-                    preference.getId(),        //  ID único de la preferencia
-                    //        preference.getInitPoint()  //  devuelve URL para redirigir al pago
-                    preference.getSandboxInitPoint()  // devuelve URL para redirigir al pago para pruebas
+                    preference.getId(),
+                    // preference.getInitPoint() para produccion
+                    preference.getSandboxInitPoint()
             );
 
         } catch (MPApiException apiException) {
@@ -115,6 +116,7 @@ public class PaymentService {
         }
     }
 
+
     /**
      * Updates (or creates) a payment record in the database based on Mercado Pago webhook data.
      * Ensures the payment status and logs are consistent.
@@ -123,6 +125,7 @@ public class PaymentService {
      * @param mpStatus The payment status from Mercado Pago (e.g., "approved", "pending", "rejected").
      * @param userEmail The payer's email associated with the payment.
      */
+    @Transactional
     public Payment updatePaymentStatus(String mpPaymentId, String mpStatus, String userEmail) {
         // Intentar obtener el pago existente
         Payment payment = paymentRepository.findByMpPaymentId(mpPaymentId)
@@ -168,9 +171,10 @@ public class PaymentService {
      *
      * @param mpPaymentId The Mercado Pago payment ID included in the webhook notification.
      */
+    @Transactional
     public void processWebhookNotification(String mpPaymentId) {
         try {
-            // Inicializar el SDK de Mercado Pago
+            // Inicializar SDK de Mercado Pago
             MercadoPagoConfig.setAccessToken(System.getenv("MP_ACCESS_TOKEN"));
 
             // Obtener el pago desde la API de Mercado Pago
@@ -189,15 +193,19 @@ public class PaymentService {
 
             // Solo crear ticket si el pago fue aprobado
             if (StatusPayment.APPROVED.equals(payment.getStatus())) {
+
+                // Construir DTO para crear el ticket
                 TicketRequestDTO ticketDTO = new TicketRequestDTO();
-                ticketDTO.setFunctionId(payment.getTicket().getFunction().getId());
-                ticketDTO.setQuantity(1);
-                // agregar ticketDTO.setAmount(payment.getAmount());
+                ticketDTO.setFunctionId(payment.getFunction().getId());
+                ticketDTO.setQuantity(payment.getQuantity());
+                ticketDTO.setTotalAmount(payment.getAmount());
+                ticketDTO.setSeats(payment.getSeats());
 
-                // Usar el método que devuelve entidades
-                List<Ticket> tickets = ticketService.buyTicketsEntity(ticketDTO);
+                // Crear ticket
+                Ticket ticket = ticketService.createTicketFromPayment(ticketDTO);
 
-                payment.setTicket(tickets.get(0));
+                // Asociar ticket al pago y persistir
+                payment.setTicket(ticket);
                 paymentRepository.save(payment);
             }
         } catch (MPApiException e) {
@@ -207,6 +215,7 @@ public class PaymentService {
             e.printStackTrace();
         }
     }
+
 }
 
 

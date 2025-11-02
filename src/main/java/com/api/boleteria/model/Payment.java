@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "payments")
@@ -41,6 +43,19 @@ public class Payment {
     @OneToOne
     @JoinColumn(name = "ticket_id")    // Relación con el ticket asociado (1 pago -> 1 ticket)
     private Ticket ticket;
+
+    @ManyToOne
+    @JoinColumn(name = "function_id")
+    private Function function;
+
+    @Column(nullable = false)
+    private Integer quantity;  // Cantidad de entradas compradas
+
+    @ElementCollection
+    @CollectionTable(name = "payment_seats", joinColumns = @JoinColumn(name = "payment_id"))
+    @Column(name = "seat")
+    private List<String> seats = new ArrayList<>();
+
 
 }
 

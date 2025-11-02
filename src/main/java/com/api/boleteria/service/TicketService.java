@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 
+import java.math.BigDecimal;
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -59,7 +60,7 @@ public class TicketService {
      * @throws NotFoundException si no se encuentra la función o la tarjeta del usuario.
      * @throws BadRequestException si no hay capacidad suficiente o fondos en la tarjeta.
      */
-    @Transactional
+   /* @Transactional
     public List<TicketDetailDTO> buyTickets(TicketRequestDTO dto) {
         TicketValidator.validateFields(dto);
 
@@ -88,7 +89,7 @@ public class TicketService {
 
         List<Ticket> createdTickets = IntStream.range(0, dto.getQuantity())
                 .mapToObj(i -> {
-                    Ticket ticket = mapToEntity(user, function);
+                    Ticket ticket = mapToEntity(user, function, dto);
                     function.getTickets().add(ticket); // setteo la relacion en ambos lados
                     user.getTickets().add(ticket); // setteo la relacion en ambos lados
                     return ticketRepository.save(ticket);
@@ -100,12 +101,11 @@ public class TicketService {
                 .map(this::mapToDetailDTO)
                 .toList();
     }
-
+    */
 
     @Transactional
-    public List<Ticket> buyTicketsEntity(TicketRequestDTO dto) {
+    public Ticket createTicketFromPayment(TicketRequestDTO dto) {
         TicketValidator.validateFields(dto);
-
         User user = userService.findAuthenticatedUser();
 
         Function function = functionRepository.findById(dto.getFunctionId())
@@ -115,28 +115,21 @@ public class TicketService {
             throw new BadRequestException("La sala asociada a la función está inhabilitada.");
         }
 
+        // Validar capacidad disponible
         TicketValidator.validateCapacity(function, dto.getQuantity());
 
-        Card card = cardRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new NotFoundException("El usuario " + user.getUsername() + " no tiene una tarjeta registrada."));
+        Ticket ticket = new Ticket();
+        ticket.setUser(user);
+        ticket.setFunction(function);
+        ticket.setQuantity(dto.getQuantity());
+        ticket.setTicketPrice(BigDecimal.valueOf(dto.getTotalAmount().doubleValue() / dto.getQuantity()));
+        ticket.setPurchaseDateTime(LocalDateTime.now());
+        ticket.setSeats(dto.getSeats());
 
-        TicketValidator.validateCardBalance(card, dto.getQuantity());
-
-        double totalAmount = TICKET_PRICE * dto.getQuantity();
-
-        card.setBalance(card.getBalance() - totalAmount);
         function.setAvailableCapacity(function.getAvailableCapacity() - dto.getQuantity());
-        cardRepository.save(card);
         functionRepository.save(function);
 
-        return IntStream.range(0, dto.getQuantity())
-                .mapToObj(i -> {
-                    Ticket ticket = mapToEntity(user, function);
-                    function.getTickets().add(ticket);
-                    user.getTickets().add(ticket);
-                    return ticketRepository.save(ticket);
-                })
-                .toList();
+        return ticketRepository.save(ticket);
     }
 
 
@@ -198,29 +191,35 @@ public class TicketService {
     private TicketDetailDTO mapToDetailDTO(Ticket ticket) {
         return new TicketDetailDTO(
                 ticket.getId(),
-                ticket.getPurchaseDateTime().toLocalDate().toString(),
                 ticket.getFunction().getMovie().getTitle(),
                 ticket.getFunction().getCinema().getId(),
+                ticket.getPurchaseDateTime().toLocalDate().toString(),
                 ticket.getPurchaseDateTime().toLocalTime().toString(),
-                ticket.getTicketPrice()
+                ticket.getTicketPrice(),
+                ticket.getQuantity(),
+                ticket.getSeats()
         );
     }
+
 
     /**
      * Mapea los datos necesarios para crear una entidad Ticket a partir de un usuario y una función.
      *
      * @param user     Usuario que compra el ticket.
      * @param function Función asociada al ticket.
+     * @param dto DTO con datos de la compra
      * @return Nueva instancia de Ticket con los datos seteados.
      */
-    private Ticket mapToEntity(User user, Function function) {
+    private Ticket mapToEntity(User user, Function function, TicketRequestDTO dto) {
         Ticket ticket = new Ticket();
-        ticket.setTicketPrice(TICKET_PRICE);
+        ticket.setTicketPrice(dto.getTotalAmount().divide(BigDecimal.valueOf(dto.getQuantity())));
+        ticket.setQuantity(dto.getQuantity());
         ticket.setPurchaseDateTime(LocalDateTime.now());
         ticket.setUser(user);
         ticket.setFunction(function);
         return ticket;
     }
+
 
 
 }

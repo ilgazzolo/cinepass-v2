@@ -6,7 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tickets")
@@ -20,7 +23,10 @@ public class Ticket {
     private Long id;
 
     @Column(nullable = false)
-    private Double ticketPrice;
+    private BigDecimal ticketPrice;
+
+    @Column(nullable = false)
+    private Integer quantity;
 
     @Column(nullable = false)
     private LocalDateTime purchaseDateTime;
@@ -33,4 +39,10 @@ public class Ticket {
     @ManyToOne
     @JoinColumn(name = "function_id", nullable = false)
     private Function function;
+
+    @ElementCollection
+    @CollectionTable(name = "ticket_seats", joinColumns = @JoinColumn(name = "ticket_id"))
+    @Column(name = "seat")
+    private List<String> seats = new ArrayList<>(); // Esto crea una tabla auxiliar ticket_seats con dos columnas: ticket_id (FK)  y  seat (nombre o código de la butaca)
+
 }

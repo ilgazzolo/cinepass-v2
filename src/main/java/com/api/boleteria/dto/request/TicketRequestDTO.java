@@ -1,10 +1,14 @@
 package com.api.boleteria.dto.request;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @Setter
@@ -14,9 +18,15 @@ public class TicketRequestDTO {
         @Positive(message = "El ID de la función debe ser un valor positivo.")
         private Long functionId;
 
-        @NotNull(message = "Debe especificar la cantidad de tickets.")
-        @Min(value = 1, message = "Debe comprar al menos un ticket.")
+        @NotNull(message = "Debe especificar la cantidad de entradas.")
+        @Min(value = 1, message = "Debe comprar al menos una entrada.")
         private Integer quantity;
 
-        //agregar precio final(amout), id de peli, array string(butacas)
+        @NotNull(message = "Debe especificar el monto total.")
+        @DecimalMin(value = "0.0", inclusive = false, message = "El monto debe ser positivo.")
+        private BigDecimal totalAmount;
+
+        @NotNull(message = "Debe especificar las butacas.")
+        @Min(value = 1, message = "Debe elegir al menos una butaca.")
+        private List<String> seats;  // Ej: ["A1", "A2", "A3"]
 }
