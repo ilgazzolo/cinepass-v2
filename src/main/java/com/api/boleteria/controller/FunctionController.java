@@ -27,6 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/functions")
 @Validated
+@CrossOrigin(origins = {"http://localhost:4200"})
 public class FunctionController {
     private final FunctionService functionService;
 

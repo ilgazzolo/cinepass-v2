@@ -30,6 +30,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/movies")
 @Validated
+@CrossOrigin(origins = {"http://localhost:4200"})
 public class MovieController {
 
     @Autowired

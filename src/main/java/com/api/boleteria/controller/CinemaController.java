@@ -29,6 +29,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RequestMapping("/api/cinemas")
 @Validated
+@CrossOrigin(origins = {"http://localhost:4200"})
 public class CinemaController {
 
     @Autowired
