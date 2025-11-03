@@ -2,15 +2,18 @@ package com.api.boleteria.mercadopago.service;
 
 import com.api.boleteria.dto.detail.TicketDetailDTO;
 import com.api.boleteria.dto.request.TicketRequestDTO;
+import com.api.boleteria.exception.NotFoundException;
 import com.api.boleteria.log.PaymentLog;
 import com.api.boleteria.mercadopago.dto.PaymentRequestDTO;
 import com.api.boleteria.mercadopago.dto.PaymentResponseDTO;
 import com.api.boleteria.model.Payment;
 import com.api.boleteria.model.Ticket;
+import com.api.boleteria.model.User;
 import com.api.boleteria.model.enums.StatusPayment;
 import com.api.boleteria.repository.IPaymentLogRepository;
 import com.api.boleteria.repository.IPaymentRepository;
 import com.api.boleteria.repository.ITicketRepository;
+import com.api.boleteria.repository.IUserRepository;
 import com.api.boleteria.service.TicketService;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
@@ -18,7 +21,6 @@ import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
 import com.mercadopago.exceptions.MPApiException;
-import com.mercadopago.resources.payment.PaymentStatus;
 import com.mercadopago.resources.preference.Preference;
 import com.mercadopago.MercadoPagoConfig;
 import jakarta.transaction.Transactional;
@@ -28,7 +30,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Service class responsible for managing payment operations and interactions
@@ -43,7 +44,10 @@ public class PaymentService {
     private final IPaymentRepository paymentRepository;
     private final IPaymentLogRepository paymentLogRepository;
     private final ITicketRepository ticketRepository;
+    private final IUserRepository userRepository;
     private final TicketService ticketService;
+
+
 
     /**
      * Creates a payment preference in Mercado Pago using the provided payment details.
@@ -117,6 +121,7 @@ public class PaymentService {
     }
 
 
+
     /**
      * Updates (or creates) a payment record in the database based on Mercado Pago webhook data.
      * Ensures the payment status and logs are consistent.
@@ -146,12 +151,25 @@ public class PaymentService {
             newStatusEnum = StatusPayment.PENDING;
         }
 
-        // Actualizar y guardar
+        // Actualizar estado y metadatos
         payment.setStatus(newStatusEnum);
         payment.setUpdatedAt(LocalDateTime.now());
+
+        // Evitar sobrescribir datos si ya existen
+        if (payment.getFunction() == null) {
+            System.out.println("Warning: Payment without associated function. It will be expected to be assigned before approval.");
+        }
+        if (payment.getAmount() == null) {
+            payment.setAmount(BigDecimal.ZERO); // Evita NPE en cálculos futuros
+        }
+        if (payment.getQuantity() == null) {
+            payment.setQuantity(0);
+        }
+
+        // Guardar cambios
         paymentRepository.save(payment);
 
-        // Registrar log del cambio de estado
+        // Registrar log
         PaymentLog log = new PaymentLog();
         log.setMpOperationId(mpPaymentId);
         log.setStatus(newStatusEnum.name());
@@ -161,6 +179,7 @@ public class PaymentService {
 
         return payment; // Devolver el Payment actualizado
     }
+
 
 
     /**
@@ -194,6 +213,12 @@ public class PaymentService {
             // Solo crear ticket si el pago fue aprobado
             if (StatusPayment.APPROVED.equals(payment.getStatus())) {
 
+
+                // Buscar usuario por email en lugar de authenticatedUser
+                User user = userRepository.findByEmail(userEmail)
+                        .orElseThrow(() -> new NotFoundException("User with email: " + userEmail + " not found"));
+
+
                 // Construir DTO para crear el ticket
                 TicketRequestDTO ticketDTO = new TicketRequestDTO();
                 ticketDTO.setFunctionId(payment.getFunction().getId());
@@ -201,15 +226,28 @@ public class PaymentService {
                 ticketDTO.setTotalAmount(payment.getAmount());
                 ticketDTO.setSeats(payment.getSeats());
 
-                // Crear ticket
-                Ticket ticket = ticketService.createTicketFromPayment(ticketDTO);
+                // Crear ticket a partir del pago
+                TicketDetailDTO ticketDetail = ticketService.createTicketFromPayment(user, ticketDTO);
+
+                // Mapear a entidad para persistir correctamente
+                Ticket ticketEntity = ticketService.mapToEntity(
+                        user,
+                        payment.getFunction(),
+                        ticketDTO
+                );
 
                 // Asociar ticket al pago y persistir
-                payment.setTicket(ticket);
+                payment.setTicket(ticketEntity);
+                ticketRepository.save(ticketEntity);
                 paymentRepository.save(payment);
+
+                System.out.println("Ticket created and linked to payment ID: " + mpPaymentId);
+
             }
         } catch (MPApiException e) {
             System.out.println("Error from Mercado Pago API: " + e.getApiResponse().getContent());
+            e.printStackTrace();
+        } catch (NotFoundException e) {
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();

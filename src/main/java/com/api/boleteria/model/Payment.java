@@ -40,7 +40,7 @@ public class Payment {
 
     private LocalDateTime date;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "ticket_id")    // Relación con el ticket asociado (1 pago -> 1 ticket)
     private Ticket ticket;
 

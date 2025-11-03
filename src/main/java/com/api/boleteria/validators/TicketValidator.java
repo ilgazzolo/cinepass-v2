@@ -2,10 +2,9 @@ package com.api.boleteria.validators;
 
 import com.api.boleteria.dto.request.TicketRequestDTO;
 import com.api.boleteria.exception.BadRequestException;
-import com.api.boleteria.model.Card;
 import com.api.boleteria.model.Function;
 
-import static com.api.boleteria.service.TicketService.TICKET_PRICE;
+
 
 /**
  * Clase de validación para operaciones relacionadas con tickets.
@@ -30,6 +29,8 @@ public class TicketValidator {
         }
     }
 
+
+
     /**
      * Valida que la función tenga suficiente capacidad disponible para la cantidad de tickets solicitados.
      *
@@ -43,19 +44,7 @@ public class TicketValidator {
         }
     }
 
-    /**
-     * Valida que la tarjeta del usuario tenga saldo suficiente para cubrir el total de la compra de tickets.
-     *
-     * @param card              Tarjeta del usuario.
-     * @param requestedQuantity Cantidad de tickets solicitados.
-     * @throws BadRequestException si el saldo de la tarjeta es insuficiente.
-     */
-    public static void validateCardBalance(Card card, int requestedQuantity) {
-        double total = TICKET_PRICE * requestedQuantity;
-        if (card.getBalance() < total) {
-            throw new BadRequestException("Fondos insuficientes en la tarjeta. Total requerido: $" + total);
-        }
-    }
+
 
     /**
      * Valida que el ID del ticket sea válido.

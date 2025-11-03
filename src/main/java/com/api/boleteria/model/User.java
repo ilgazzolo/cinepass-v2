@@ -42,9 +42,6 @@ public class User {
     @JsonManagedReference
     private List<Ticket> tickets = new ArrayList<>();
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Card card;
-
 
     //CONSTRUCTOR CON ROL AUTOMATICO
     public User(String name, String surname, String username, String email, String password) {

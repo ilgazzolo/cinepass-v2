@@ -8,15 +8,12 @@ import com.api.boleteria.exception.BadRequestException;
 import com.api.boleteria.exception.NotFoundException;
 import com.api.boleteria.model.*;
 import com.api.boleteria.model.enums.ScreenType;
-import com.api.boleteria.repository.ICardRepository;
 import com.api.boleteria.repository.ICinemaRepository;
 import com.api.boleteria.repository.IFunctionRepository;
 import com.api.boleteria.validators.CinemaValidator;
 import com.api.boleteria.validators.FunctionValidator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -34,7 +31,6 @@ public class FunctionService {
 
     private final IFunctionRepository functionRepo;
     private final ICinemaRepository cinemaRepo;
-    private final ICardRepository cardRepo;
     private final MovieService movieService;
 
 
@@ -317,18 +313,6 @@ public class FunctionService {
     public void deleteById(Long id) {
         Function function = functionRepo.findById(id)
                 .orElseThrow(() -> new NotFoundException("La función con ID: " + id + " no fue encontrada."));
-
-        List<Ticket> tickets = function.getTickets();
-
-        for (Ticket ticket : tickets) {
-            User user = ticket.getUser();
-            Card card = cardRepo.findByUserId(user.getId())
-                    .orElseThrow(() -> new NotFoundException("El usuario " + user.getUsername() + " no tiene una tarjeta registrada."));
-
-            // Reintegrar saldo
-            card.setBalance(card.getBalance() + ticket.getTicketPrice().doubleValue());
-            cardRepo.save(card);
-        }
 
         // Eliminar función junto con sus tickets (gracias a cascade y orphanRemoval)
         functionRepo.delete(function);

@@ -45,7 +45,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/cinemas/**").authenticated()
                         .requestMatchers("/api/movies/**").authenticated()
-                        .requestMatchers("/api/card/**").authenticated()
                         .requestMatchers("/api/tickets/**").authenticated()
                         .requestMatchers("/api/userManagement/**").authenticated()
                         .requestMatchers("/api/payments/**").authenticated()

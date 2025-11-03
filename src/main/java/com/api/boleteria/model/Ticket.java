@@ -23,7 +23,10 @@ public class Ticket {
     private Long id;
 
     @Column(nullable = false)
-    private BigDecimal ticketPrice;
+    private BigDecimal unitPrice;
+
+    @Column(nullable = false)
+    private BigDecimal totalAmount;
 
     @Column(nullable = false)
     private Integer quantity;

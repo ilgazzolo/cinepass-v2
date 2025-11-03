@@ -18,6 +18,10 @@ public class TicketRequestDTO {
         @Positive(message = "El ID de la función debe ser un valor positivo.")
         private Long functionId;
 
+        @NotNull(message = "Debe especificar el monto unitario por entrada.")
+        @DecimalMin(value = "0.0", inclusive = false, message = "El monto debe ser positivo.")
+        private BigDecimal unitPrice;
+
         @NotNull(message = "Debe especificar la cantidad de entradas.")
         @Min(value = 1, message = "Debe comprar al menos una entrada.")
         private Integer quantity;

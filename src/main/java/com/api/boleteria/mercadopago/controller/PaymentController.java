@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 import java.util.Map;
 
 
@@ -25,6 +26,9 @@ import java.util.Map;
 public class PaymentController {
 
     private final PaymentService paymentService;
+
+
+    //-------------------------------CREATE--------------------------------//
 
     /**
      * Creates a Mercado Pago payment preference using the data provided by the client.
@@ -49,29 +53,6 @@ public class PaymentController {
     }
 
 
-    /**
-     * Endpoint called when a payment is successfully completed.
-     *
-     * @return A confirmation message indicating successful payment.
-     */
-    @GetMapping("/success")
-    public String success() { return "Payment success"; }
-
-    /**
-     * Endpoint called when a payment fails.
-     *
-     * @return A message indicating payment failure.
-     */
-    @GetMapping("/failure")
-    public String failure() { return "Payment failure"; }
-
-    /**
-     * Endpoint called when a payment is still pending.
-     *
-     * @return A message indicating the payment is pending.
-     */
-    @GetMapping("/pending")
-    public String pending() { return "Payment pending"; }
 
     /**
      * Receives webhook notifications from Mercado Pago.
@@ -81,7 +62,7 @@ public class PaymentController {
      * @return A {@link ResponseEntity} indicating whether the notification was processed successfully.
      */
     @PostMapping("/notification")
-    public ResponseEntity<String> receiveNotification(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<String> handleNotification(@RequestBody Map<String, Object> payload) {
         try {
             // El campo "data.id" contiene el ID del pago de Mercado Pago
             if (payload.containsKey("data")) {
@@ -97,6 +78,48 @@ public class PaymentController {
             return ResponseEntity.internalServerError().body("Error processing notification: " + e.getMessage());
         }
     }
+
+
+    //-------------------------------REDIRECT--------------------------------//
+    //Estas URLs deben coincidir con las rutas que esten definidas en Angular.
+
+    /**
+     * Endpoint called when a payment is successfully completed.
+     *
+     * @return A confirmation message indicating successful payment.
+     */
+    @GetMapping("/success")
+    public RedirectView success() {
+        // Redirige al frontend a la página de éxito
+        return new RedirectView("http://localhost:4200/payment-success");
+    }
+
+
+
+    /**
+     * Endpoint called when a payment fails.
+     *
+     * @return A message indicating payment failure.
+     */
+    public RedirectView failure() {
+        // Redirige al frontend a la página de fallo
+        return new RedirectView("http://localhost:4200/payment-failure");
+    }
+
+
+
+    /**
+     * Endpoint called when a payment is still pending.
+     *
+     * @return A message indicating the payment is pending.
+     */
+    @GetMapping("/pending")
+    public RedirectView pending() {
+        // Redirige al frontend a la página pendiente
+        return new RedirectView("http://localhost:4200/payment-pending");
+    }
+
+
 }
 
 

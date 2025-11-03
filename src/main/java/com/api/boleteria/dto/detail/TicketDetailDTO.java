@@ -9,7 +9,8 @@ public record TicketDetailDTO(
         Long cinemaId,
         String purchaseDate,
         String purchaseTime,
-        BigDecimal ticketPrice,
+        BigDecimal unitPrice,
+        BigDecimal totalAmount,
         Integer quantity,
         List<String> seats
 ) {}

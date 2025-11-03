@@ -22,28 +22,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tickets")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class TicketController {
 
     private final TicketService ticketService;
-
-    //-------------------------------CREATE--------------------------------//
-    /**
-     * Permite a un usuario con rol CLIENT comprar boletos según la solicitud recibida.
-     *
-     * @param entity DTO con los datos necesarios para comprar boletos.
-     * @return ResponseEntity con la lista de boletos comprados y sus detalles.
-     */
-
-    @PostMapping("/buy")
-    @PreAuthorize("hasRole('CLIENT')")
-    public ResponseEntity<List<TicketDetailDTO>> buyTicket(@RequestBody @Valid TicketRequestDTO entity) {
-        System.out.println("Recibido functionId = " + entity.getFunctionId());
-        System.out.println("Recibido quantity = " + entity.getQuantity());
-        return ResponseEntity.ok(ticketService.buyTickets(entity));
-    }
-
-
-
 
     //-------------------------------GET--------------------------------//
 
@@ -58,6 +40,8 @@ public class TicketController {
         List<TicketDetailDTO> tickets = ticketService.findTicketsFromAuthenticatedUser();
         return ResponseEntity.ok(tickets);
     }
+
+
 
     /**
      * Obtiene el detalle de un boleto específico por su ID.
