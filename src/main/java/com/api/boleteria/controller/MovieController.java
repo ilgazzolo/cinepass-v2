@@ -51,6 +51,18 @@ public class MovieController {
         }
     }
 
+    @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
+    public List<MovieDetailDTO> searchMovies(@RequestParam String title) throws IOException {
+        return movieService.searchMoviesByTitle(title);
+    }
+
+
+
+
+
+
+
 
 
 

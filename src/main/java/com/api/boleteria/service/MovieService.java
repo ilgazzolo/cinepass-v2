@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import com.api.boleteria.dto.detail.MovieDetailDTO;
@@ -13,6 +15,7 @@ import com.api.boleteria.dto.detail.MovieDetailDTO;
 import com.api.boleteria.exception.BadRequestException;
 import com.api.boleteria.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Servicio para gestionar operaciones relacionadas con Peliculas.
@@ -57,11 +60,11 @@ public class MovieService {
         String title = node.get("title").asText();
         String originalLanguage = node.get("original_language").asText();
         String releaseDate = node.get("release_date").asText();
-        int runtime = node.get("runtime").asInt();
+        Integer runtime = node.hasNonNull("runtime") ? node.get("runtime").asInt() : null;
         String overview = node.get("overview").asText();
         String imdbId = node.hasNonNull("imdb_id") ? node.get("imdb_id").asText() : null;
-        double voteAverage = node.get("vote_average").asDouble();
-        int voteCount = node.get("vote_count").asInt();
+        Double voteAverage = node.hasNonNull("vote_average") ? node.get("vote_average").asDouble() : null;
+        Integer voteCount = node.hasNonNull("vote_count") ? node.get("vote_count").asInt() : null;
 
         // Lista de géneros (TMDB devuelve un array de objetos con {id, name})
         List<String> genres = new ArrayList<>();
@@ -92,6 +95,31 @@ public class MovieService {
                 posterUrl,
                 bannerUrl
         );
+    }
+
+    public List<MovieDetailDTO> searchMoviesByTitle(String title) throws IOException {
+        // Codificar el título para la URL
+        String query = URLEncoder.encode(title, StandardCharsets.UTF_8);
+        String endpoint = "/search/movie?query=" + query;
+
+        Response response = makeRequest(endpoint);
+
+        if (!response.isSuccessful()) {
+            throw new IOException("Error en TMDB API: " + response.code() + " " + response.message());
+        }
+
+        String json = response.body().string();
+        JsonNode rootNode = objectMapper.readTree(json);
+        JsonNode results = rootNode.get("results");
+
+        List<MovieDetailDTO> movies = new ArrayList<>();
+        if (results != null && results.isArray()) {
+            for (JsonNode movieNode : results) {
+                movies.add(parseMovieDetailDto(movieNode.toString()));
+            }
+        }
+
+        return movies;
     }
 
 

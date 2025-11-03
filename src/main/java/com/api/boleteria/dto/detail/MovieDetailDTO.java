@@ -7,12 +7,12 @@ public record MovieDetailDTO(
         String title,
         String originalLanguage,
         String releaseDate,
-        int runtime,
+        Integer runtime,
         List<String> genres,
         String overview,
         String imdbId,
-        double voteAverage,
-        int voteCount,
+        Double voteAverage,
+        Integer voteCount,
         String posterUrl,
         String bannerUrl
 ){}
