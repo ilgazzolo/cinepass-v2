@@ -17,13 +17,13 @@ public class Seat {
     private Long id;
 
     @Column(nullable = false)
-    private int rowNumber;
+    private Integer rowNumber;
 
     @Column(nullable = false)
-    private int columnNumber;
+    private Integer columnNumber;
 
     @Column(nullable = false)
-    private boolean occupied;
+    private Boolean occupied;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "function_id")
