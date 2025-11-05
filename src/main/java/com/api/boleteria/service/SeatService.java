@@ -10,7 +10,8 @@ import java.util.List;
 
 
 /**
- * Servicio para gestionar operaciones relacionadas con las butacas de Salas.
+ * Service for managing operations related to seat allocation in movie theaters.
+ * Manages seat searches and status updates.
  */
 @Service
 @RequiredArgsConstructor
@@ -32,7 +33,7 @@ public class SeatService {
 
     public Seat occupySeat(Long seatId) {
         Seat seat = seatRepository.findById(seatId)
-                .orElseThrow(() -> new NotFoundException("Butaca no encontrada."));
+                .orElseThrow(() -> new NotFoundException("Seat not found."));
         seat.setOccupied(true);
         return seatRepository.save(seat);
     }

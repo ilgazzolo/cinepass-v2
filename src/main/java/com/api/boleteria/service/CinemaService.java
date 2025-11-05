@@ -10,6 +10,7 @@ import com.api.boleteria.model.enums.ScreenType; //
 import com.api.boleteria.repository.ICinemaRepository; //
 import com.api.boleteria.repository.IFunctionRepository; //
 import com.api.boleteria.validators.CinemaValidator; //
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +25,6 @@ import java.util.List;
 public class CinemaService {
 
     private final ICinemaRepository cinemaRepository;
-
     private final IFunctionRepository functionRepository;
 
 
@@ -37,6 +37,7 @@ public class CinemaService {
      * @return Lista de CinemaDetailDTO con la información de las salas creadas.
      * @throws BadRequestException si alguna sala ya existe con el mismo nombre.
      */
+    @Transactional
     public List<CinemaDetailDTO> saveAll(List<CinemaRequestDTO> requests) {
         List<Cinema> cinemasToSave = new ArrayList<>();
 
@@ -48,7 +49,9 @@ public class CinemaService {
                 throw new BadRequestException("Ya existe una sala con el nombre: " + dto.getName()); //
             }
 
-            cinemasToSave.add(mapToEntity(dto));
+            Cinema cinema = mapToEntity(dto);
+            cinema.calculateSeatCapacity();
+            cinemasToSave.add(cinema);
         }
 
         List<Cinema> savedCinemas = cinemaRepository.saveAll(cinemasToSave);
@@ -120,7 +123,6 @@ public class CinemaService {
      */
 
     public List<CinemaListDTO> findBySeatCapacity(Integer seatCapacity) {
-        CinemaValidator.validateCapacity(seatCapacity);
         List<CinemaListDTO> list = cinemaRepository.findBySeatCapacityGreaterThan(seatCapacity).stream()
                 .map(this::mapToListDTO)
                 .toList();
@@ -157,7 +159,9 @@ public class CinemaService {
                     c.setName(entity.getName());
                     c.setScreenType(entity.getScreenType());
                     c.setAtmos(entity.getAtmos());
-                    c.setSeatCapacity(entity.getCapacity());
+                    c.setRows(entity.getRows());
+                    c.setColumns(entity.getColumns());
+                    c.calculateSeatCapacity();
                     c.setEnabled(entity.getEnabled());
                     Cinema updated = cinemaRepository.save(c);
                     return mapToDetailDTO(updated);
@@ -247,6 +251,8 @@ public class CinemaService {
                 cinema.getName(),
                 cinema.getScreenType(),
                 cinema.getAtmos(),
+                cinema.getRows(),
+                cinema.getColumns(),
                 cinema.getSeatCapacity(),
                 cinema.getEnabled()
         );
@@ -257,7 +263,9 @@ public class CinemaService {
         cinema.setName(dto.getName());
         cinema.setScreenType(dto.getScreenType());
         cinema.setAtmos(dto.getAtmos());
-        cinema.setSeatCapacity(dto.getCapacity());
+        cinema.setRows(dto.getRows());
+        cinema.setColumns(dto.getColumns());
+        cinema.calculateSeatCapacity();
         cinema.setEnabled(dto.getEnabled());
         return cinema;
     }

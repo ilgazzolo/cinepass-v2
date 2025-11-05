@@ -19,10 +19,15 @@ public class CinemaRequestDTO {
     @NotNull(message = "El campo atmos es obligatorio")
     private Boolean atmos;
 
+    @NotNull(message = "La cantidad de filas es obligatoria")
+    @Min(value = 1, message = "La capacidad mínima es 1")
+    @Max(value = 20, message = "La capacidad máxima permitida es 20 filas")
+    private Integer rows;
+
     @NotNull(message = "La capacidad es obligatoria")
     @Min(value = 1, message = "La capacidad mínima es 1")
-    @Max(value = 200, message = "La capacidad máxima permitida es 200")
-    private Integer capacity;
+    @Max(value = 20, message = "La capacidad máxima permitida es 20 columnas")
+    private Integer columns;
 
     @NotNull(message = "El campo habilitada es obligatorio")
     private Boolean enabled;

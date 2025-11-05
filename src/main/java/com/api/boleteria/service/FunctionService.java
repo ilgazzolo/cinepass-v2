@@ -51,22 +51,19 @@ public class FunctionService {
 
         for (FunctionRequestDTO entity : entities) {
             FunctionValidator.validateFields(entity);
+            FunctionValidator.validateMaxTwoYears(entity);
 
             if (functionRepo.existsByCinemaIdAndShowtime(entity.getCinemaId(), entity.getShowtime())) {
                 throw new BadRequestException("Ya existe una función para la sala " + entity.getCinemaId() + " en el horario " + entity.getShowtime());
             }
-
-            FunctionValidator.validateMaxTwoYears(entity);
 
             Cinema cinema = cinemaRepo.findById(entity.getCinemaId())
                     .orElseThrow(() -> new NotFoundException("No existe la sala con ID: " + entity.getCinemaId()));
             FunctionValidator.validateEnabledCinema(cinema);
 
             MovieDetailDTO movie;
-
             try {
                 movie = movieService.getMovieById(entity.getMovieId());
-
                 if (movie == null) {
                     throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
                 }
@@ -74,22 +71,30 @@ public class FunctionService {
                 throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
             }
 
-
-
             List<Function> functionsInTheCinema = functionRepo.findByCinemaId(entity.getCinemaId());
             FunctionValidator.validateSchedule(entity, movie, functionsInTheCinema);
 
             Function function = mapToEntity(entity, cinema, movie);
-
             function.setCinema(cinema);
             function.setMovieId(movie.id());
             function.setMovieName(movie.title());
             function.setRunTime(movie.runtime());
 
+            List<Seat> seats = new ArrayList<>();
+            for (int row = 1; row <= cinema.getRows(); row++) {
+                for (int col = 1; col <= cinema.getColumns(); col++) {
+                    Seat seat = new Seat();
+                    seat.setRowNumber(row);
+                    seat.setColumnNumber(col);
+                    seat.setOccupied(false);
+                    seat.setFunction(function);
+                    seats.add(seat);
+                }
+            }
+
+            function.setSeats(seats);
+
             Function saved = functionRepo.save(function);
-
-
-
             createdFunctions.add(mapToDetailDTO(saved));
         }
 
@@ -124,6 +129,7 @@ public class FunctionService {
     }
 
 
+
     /**
      * obtiene las funciones segun un ID especificado
      * @param id de la funcion a buscar
@@ -141,6 +147,7 @@ public class FunctionService {
 
         return mapToDetailDTO(function);
     }
+
 
 
     /**
@@ -182,6 +189,8 @@ public class FunctionService {
                 .toList();
     }
 
+
+
     /**
      * Muestra las funciones según un tipo de pantalla especificado.
      *
@@ -204,6 +213,8 @@ public class FunctionService {
                 .map(this::mapToDetailDTO)
                 .toList();
     }
+
+
 
     /**
      * Muestra las funciones disponibles de una sala específica según su ID.
@@ -240,8 +251,6 @@ public class FunctionService {
                 .map(this::mapToDetailDTO)
                 .toList();
     }
-
-
 
 
     //-------------------------------UPDATE--------------------------------//
@@ -296,7 +305,6 @@ public class FunctionService {
     }
 
 
-
     //-------------------------------DELETE--------------------------------//
     /**
      * Elimina una función según un ID especificado.
@@ -339,6 +347,8 @@ public class FunctionService {
         );
     }
 
+
+
     /**
      * Convierte una entidad Function en un DTO de lista.
      * @param function entidad Function
@@ -355,6 +365,8 @@ public class FunctionService {
                 function.getRunTime()
         );
     }
+
+
 
     /**
      * Convierte un FunctionRequestDTO en una entidad Function.

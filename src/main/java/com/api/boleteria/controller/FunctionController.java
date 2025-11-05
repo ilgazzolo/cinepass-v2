@@ -61,6 +61,8 @@ public class FunctionController {
         return ResponseEntity.ok(list);
     }
 
+
+
     /**
      * Obtiene el detalle de una función específica por su ID.
      *
@@ -72,6 +74,8 @@ public class FunctionController {
     public ResponseEntity<FunctionDetailDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(functionService.findById(id));
     }
+
+
 
     /**
      * Obtiene la lista de funciones disponibles para una película específica,
@@ -90,6 +94,8 @@ public class FunctionController {
         return ResponseEntity.ok(functions);
     }
 
+
+
     /**
      * Obtiene la lista de funciones filtradas por tipo de pantalla.
      * <p>
@@ -105,6 +111,8 @@ public class FunctionController {
         return ResponseEntity.ok(functions);
     }
 
+
+
     /**
      * Endpoint para obtener funciones disponibles de una sala específica.
      *
@@ -117,7 +125,6 @@ public class FunctionController {
         List<FunctionDetailDTO> result = functionService.findByCinemaId(cinemaId);
         return ResponseEntity.ok(result);
     }
-
 
 
     //-------------------------------UPDATE--------------------------------//
@@ -134,22 +141,22 @@ public class FunctionController {
     public ResponseEntity<FunctionDetailDTO> update (@PathVariable Long id,
                                                      @Valid @RequestBody FunctionRequestDTO entity){
         return ResponseEntity.ok(functionService.updateById(id, entity));
-        }
-
-
-        //-------------------------------DELETE--------------------------------//
-
-        /**
-         * Elimina una función por su ID.
-         *
-         * @param id Identificador de la función a eliminar.
-         * @return ResponseEntity con mensaje confirmando la eliminación.
-         */
-        @DeleteMapping("/delete/{id}")
-        @PreAuthorize("hasRole('ADMIN')")
-        public ResponseEntity<String> delete(@PathVariable Long id){
-            functionService.deleteById(id);
-            return ResponseEntity.ok("Función eliminada correctamente.");
-        }
     }
+
+
+    //-------------------------------DELETE--------------------------------//
+
+    /**
+     * Elimina una función por su ID.
+     *
+     * @param id Identificador de la función a eliminar.
+     * @return ResponseEntity con mensaje confirmando la eliminación.
+     */
+    @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> delete(@PathVariable Long id){
+        functionService.deleteById(id);
+        return ResponseEntity.ok("Función eliminada correctamente.");
+    }
+}
 

@@ -20,7 +20,7 @@ public class CinemaValidator {
     public static void validateFields(CinemaRequestDTO dto) {
         validateName(dto.getName());
         validateScreenType(dto.getScreenType());
-        validateCapacity(dto.getCapacity());
+        validateCapacity(dto.getRows(), dto.getColumns());
         validateAtmos(dto.getAtmos());
         validateEnabled(dto.getEnabled());
     }
@@ -53,19 +53,24 @@ public class CinemaValidator {
     }
 
     /**
-     * Valida la capacidad de la sala.
+     * Valida las filas y columnas de la sala.
      *
-     * @param capacity Capacidad a validar.
-     * @throws BadRequestException si es nula o no está entre 1 y 200.
+     * @param rows Filas a validar.
+     * @param columns Columnas a validar
+     * @throws BadRequestException si es nula o no está entre 1 y 20.
      */
-    public static void validateCapacity(Integer capacity) {
-        if (capacity == null) {
-            throw new BadRequestException("La capacidad no puede ser nula.");
+    public static void validateCapacity(Integer rows, Integer columns) {
+        if (rows == null || columns == null) {
+            throw new BadRequestException("Las filas y columas no pueden ser nulas.");
         }
-        if (capacity < 1 || capacity > 200) {
-            throw new BadRequestException("La capacidad debe ser entre 1 y 200.");
+        if (rows < 1 || rows > 20) {
+            throw new BadRequestException("La capacidad de filas debe ser entre 1 y 20.");
+        }
+        if (columns < 1 || columns > 20) {
+            throw new BadRequestException("La capacidad de columnas debe ser entre 1 y 20.");
         }
     }
+
 
     /**
      * Valida el atributo Atmos.

@@ -66,7 +66,9 @@ public class CinemaController {
         return ResponseEntity.ok(list);
     }
 
-       /**
+
+
+    /**
      * Obtiene el detalle de una sala específica por su ID.
      *
      * @param id Identificador de la sala.
@@ -77,6 +79,7 @@ public class CinemaController {
     public ResponseEntity<CinemaDetailDTO> getById(@PathVariable Long id){
         return ResponseEntity.ok(cinemaService.findById(id));
     }
+
 
 
     /**
@@ -93,6 +96,7 @@ public class CinemaController {
     }
 
 
+
     /**
      * Obtiene la lista de salas filtradas por estado habilitado de la sala.
      *
@@ -105,6 +109,8 @@ public class CinemaController {
         List<CinemaListDTO> list = cinemaService.findByEnabledRoom(enabled);
         return ResponseEntity.ok(list);
     }
+
+
 
     /**
      * Obtiene la lista de salas filtradas por capacidad de asientos.
@@ -135,6 +141,8 @@ public class CinemaController {
         return ResponseEntity.ok(cinemaService.updateById(id, entity));
     }
 
+
+
     /**
      * Actualiza el estado 'enabled' de una sala según su ID.
      *
@@ -151,7 +159,6 @@ public class CinemaController {
         Boolean enabled = enabledPayload.get("enabled");
         return ResponseEntity.ok( cinemaService.updateEnabledById(id, enabled));
     }
-
 
 
     //-------------------------------DELETE--------------------------------//
