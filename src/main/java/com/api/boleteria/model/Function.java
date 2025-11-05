@@ -1,36 +1,34 @@
 package com.api.boleteria.model;
 
-import com.api.boleteria.dto.detail.MovieDetailDTO;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "functions")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Function {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = true)
     private LocalDateTime showtime;
 
     @Column(nullable = false)
     private Integer availableCapacity;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cinema_id", nullable = false)
+    @JsonBackReference
     private Cinema cinema;
 
     @Column(nullable = false)
@@ -42,11 +40,12 @@ public class Function {
     @Column(nullable = false)
     private Integer runTime;
 
-
     @OneToMany(mappedBy = "function", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<Ticket> tickets = new ArrayList<>();
 
-
-
+    @OneToMany(mappedBy = "function", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Seat> seats = new ArrayList<>();
 
 }

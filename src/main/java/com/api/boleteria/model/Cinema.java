@@ -2,20 +2,16 @@ package com.api.boleteria.model;
 
 import com.api.boleteria.model.enums.ScreenType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "cinemas")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Cinema {
 
     @Id
@@ -33,6 +29,11 @@ public class Cinema {
     private Boolean atmos;
 
     @Column(nullable = false)
+    private int rows;
+
+    @Column(nullable = false)
+    private int columns;
+
     private Integer seatCapacity;
 
     @Column(nullable = false)
@@ -41,6 +42,9 @@ public class Cinema {
     @OneToMany(mappedBy = "cinema", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Function> functions = new ArrayList<>();
 
-
+    // Método auxiliar
+    public void calculateSeatCapacity() {
+        this.seatCapacity = this.rows * this.columns;
+    }
 
 }
