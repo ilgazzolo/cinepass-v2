@@ -22,15 +22,22 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true)
     private String mpPaymentId; // ID de Mercado Pago
 
-    @Column(nullable = false)
+    @Column(unique = true, nullable = true)
+    private String preferenceId;  // ID de la preferencia
+
+    private Long userId;    // Id del usuario que realizó el pago
+
     private String userEmail;   // Email del usuario que realizó el pago
+
+    @Column(nullable = false)
+    private Integer quantity;  // Cantidad de entradas compradas
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StatusPayment status;    // Estado del pago (approved, pending, failure)
+    private StatusPayment status;   // Estado del pago (approved, pending, failure)
 
     private BigDecimal amount;  // Monto del pago
 
@@ -48,14 +55,21 @@ public class Payment {
     @JoinColumn(name = "function_id")
     private Function function;
 
-    @Column(nullable = false)
-    private Integer quantity;  // Cantidad de entradas compradas
-
     @ElementCollection
     @CollectionTable(name = "payment_seats", joinColumns = @JoinColumn(name = "payment_id"))
     @Column(name = "seat")
     private List<String> seats = new ArrayList<>();
 
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 
 }
 

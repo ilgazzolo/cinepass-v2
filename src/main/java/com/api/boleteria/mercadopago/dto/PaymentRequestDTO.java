@@ -34,7 +34,7 @@ public class PaymentRequestDTO {
     private Long functionId;        // ID de la función asociada
 
     @NotNull(message = "Debe especificar las butacas.")
-    @Min(value = 1, message = "Debe elegir al menos una butaca.")
+    @Size(min = 1, message = "Debe elegir al menos una butaca.")
     private List<String> seats;     // Butacas seleccionadas // Ej: ["A1", "A2", "A3"]
 
 }
