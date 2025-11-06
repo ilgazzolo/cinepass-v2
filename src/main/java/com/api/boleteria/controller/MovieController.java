@@ -2,6 +2,7 @@ package com.api.boleteria.controller;
 
 import com.api.boleteria.dto.detail.MovieDetailDTO;
 import com.api.boleteria.dto.list.MovieListDTO;
+import com.api.boleteria.model.MovieCartelera;
 import com.api.boleteria.service.MovieService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,15 +30,14 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/movies")
+@CrossOrigin(origins = "http://localhost:4200")
 @Validated
-@CrossOrigin(origins = {"http://localhost:4200"})
 public class MovieController {
 
     @Autowired
     private MovieService movieService;
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         try {
             MovieDetailDTO movie = movieService.getMovieById(id);
@@ -53,10 +53,36 @@ public class MovieController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
     public List<MovieDetailDTO> searchMovies(@RequestParam String title) throws IOException {
         return movieService.searchMoviesByTitle(title);
     }
+
+    @PostMapping("/save/{id}")
+    public ResponseEntity<?> saveMovie(@PathVariable Long id) {
+        try {
+            MovieCartelera savedMovie = movieService.save(id);
+            if (savedMovie == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No se encontró la película con id " + id);
+            }
+            return ResponseEntity.ok(savedMovie);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al guardar la película: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("")
+    public ResponseEntity<List<MovieCartelera>> getAllMovies() {
+        List<MovieCartelera> movies = movieService.getAllMovies();
+        if (movies.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+        return ResponseEntity.ok(movies);
+    }
+
+
+
 
 
 

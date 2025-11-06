@@ -1,8 +1,17 @@
 package com.api.boleteria.service;
 
+import com.api.boleteria.dto.detail.CinemaDetailDTO;
+import com.api.boleteria.dto.request.CinemaRequestDTO;
+import com.api.boleteria.model.Cinema;
+import com.api.boleteria.model.MovieCartelera;
+import com.api.boleteria.repository.IFunctionRepository;
+import com.api.boleteria.repository.IMovieCarteleraRepository;
+import com.api.boleteria.validators.CinemaValidator;
 import okhttp3.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -32,6 +41,8 @@ public class MovieService {
 
     private final OkHttpClient client = new OkHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private final IMovieCarteleraRepository movieRepo;
 
     private Response makeRequest(String endpoint) throws IOException {
         Request request = new Request.Builder()
@@ -122,6 +133,40 @@ public class MovieService {
         return movies;
     }
 
+
+    public MovieCartelera save(Long id) {
+        try {
+            MovieDetailDTO movieDTO = getMovieById(id);
+            if (movieDTO == null) return null;
+
+            MovieCartelera movie = fromDTO(movieDTO);
+            return movieRepo.save(movie);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static MovieCartelera fromDTO(MovieDetailDTO dto) {
+        if (dto == null) return null;
+
+        MovieCartelera movie = new MovieCartelera();
+        movie.setTitle(dto.title());
+        movie.setOriginalLanguage(dto.originalLanguage());
+        movie.setReleaseDate(dto.releaseDate());
+        movie.setRuntime(dto.runtime());
+        movie.setOverview(dto.overview());
+        movie.setImdbId(dto.imdbId());
+        movie.setVoteAverage(dto.voteAverage());
+        movie.setVoteCount(dto.voteCount());
+        movie.setPosterUrl(dto.posterUrl());
+        movie.setBannerUrl(dto.bannerUrl());
+        return movie;
+    }
+
+    public List<MovieCartelera> getAllMovies() {
+        return movieRepo.findAll();
+    }
 
 
 
