@@ -17,10 +17,10 @@ public class Seat {
     private Long id;
 
     @Column(nullable = false)
-    private Integer rowNumber;
+    private Integer seatRowNumber;
 
     @Column(nullable = false)
-    private Integer columnNumber;
+    private Integer seatColumnNumber;
 
     @Column(nullable = false)
     private Boolean occupied;

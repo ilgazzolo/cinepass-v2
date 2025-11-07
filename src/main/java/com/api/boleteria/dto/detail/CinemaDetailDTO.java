@@ -7,8 +7,8 @@ public record CinemaDetailDTO (
         String name,
         ScreenType screenType,
         Boolean atmos,
-        Integer rows,
-        Integer columns,
+        Integer rowSeat,
+        Integer columnSeat,
         Integer seatCapacity,
         Boolean enabled
 ){}

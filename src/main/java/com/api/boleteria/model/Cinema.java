@@ -29,10 +29,10 @@ public class Cinema {
     private Boolean atmos;
 
     @Column(nullable = false)
-    private int rows;
+    private int rowSeat;
 
     @Column(nullable = false)
-    private int columns;
+    private int columnSeat;
 
     private Integer seatCapacity;
 
@@ -44,7 +44,7 @@ public class Cinema {
 
     // Método auxiliar
     public void calculateSeatCapacity() {
-        this.seatCapacity = this.rows * this.columns;
+        this.seatCapacity = this.rowSeat * this.columnSeat;
     }
 
 }

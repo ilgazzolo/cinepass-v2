@@ -49,8 +49,8 @@ public class SeatService {
     private SeatListDTO mapToListDTO(Seat seat) {
         return new SeatListDTO(
                 seat.getId(),
-                seat.getRowNumber(),
-                seat.getColumnNumber(),
+                seat.getSeatRowNumber(),
+                seat.getSeatColumnNumber(),
                 seat.getOccupied()
         );
     }

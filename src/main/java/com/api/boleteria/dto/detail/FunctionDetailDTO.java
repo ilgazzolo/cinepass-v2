@@ -9,5 +9,4 @@ public record FunctionDetailDTO(
         String movieName,
         Integer availableCapacity,
         Integer runTime
-
 ) {}

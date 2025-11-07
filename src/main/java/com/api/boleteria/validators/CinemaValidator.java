@@ -20,7 +20,7 @@ public class CinemaValidator {
     public static void validateFields(CinemaRequestDTO dto) {
         validateName(dto.getName());
         validateScreenType(dto.getScreenType());
-        validateCapacity(dto.getRows(), dto.getColumns());
+        validateCapacity(dto.getRowSeat(), dto.getColumnSeat());
         validateAtmos(dto.getAtmos());
         validateEnabled(dto.getEnabled());
     }

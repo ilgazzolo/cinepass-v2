@@ -6,6 +6,7 @@ import com.api.boleteria.mercadopago.dto.PaymentResponseDTO;
 import com.api.boleteria.mercadopago.service.PaymentService;
 import com.api.boleteria.model.Payment;
 import com.mercadopago.client.payment.PaymentClient;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,7 +41,7 @@ public class PaymentController {
      */
     @PostMapping("/create")
     @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
-    public ResponseEntity<?> createPreference(@RequestBody PaymentRequestDTO dto) {
+    public ResponseEntity<?> createPreference(@Valid @RequestBody PaymentRequestDTO dto) {
         try{
             PaymentResponseDTO response = paymentService.createPreference(dto);
             return ResponseEntity.ok(response);

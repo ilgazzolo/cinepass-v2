@@ -159,8 +159,8 @@ public class CinemaService {
                     c.setName(entity.getName());
                     c.setScreenType(entity.getScreenType());
                     c.setAtmos(entity.getAtmos());
-                    c.setRows(entity.getRows());
-                    c.setColumns(entity.getColumns());
+                    c.setRowSeat(entity.getRowSeat());
+                    c.setColumnSeat(entity.getColumnSeat());
                     c.calculateSeatCapacity();
                     c.setEnabled(entity.getEnabled());
                     Cinema updated = cinemaRepository.save(c);
@@ -251,8 +251,8 @@ public class CinemaService {
                 cinema.getName(),
                 cinema.getScreenType(),
                 cinema.getAtmos(),
-                cinema.getRows(),
-                cinema.getColumns(),
+                cinema.getRowSeat(),
+                cinema.getColumnSeat(),
                 cinema.getSeatCapacity(),
                 cinema.getEnabled()
         );
@@ -263,8 +263,8 @@ public class CinemaService {
         cinema.setName(dto.getName());
         cinema.setScreenType(dto.getScreenType());
         cinema.setAtmos(dto.getAtmos());
-        cinema.setRows(dto.getRows());
-        cinema.setColumns(dto.getColumns());
+        cinema.setRowSeat(dto.getRowSeat());
+        cinema.setColumnSeat(dto.getColumnSeat());
         cinema.calculateSeatCapacity();
         cinema.setEnabled(dto.getEnabled());
         return cinema;

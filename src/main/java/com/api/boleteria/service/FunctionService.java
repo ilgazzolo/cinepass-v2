@@ -81,11 +81,11 @@ public class FunctionService {
             function.setRunTime(movie.runtime());
 
             List<Seat> seats = new ArrayList<>();
-            for (int row = 1; row <= cinema.getRows(); row++) {
-                for (int col = 1; col <= cinema.getColumns(); col++) {
+            for (int row = 1; row <= cinema.getRowSeat(); row++) {
+                for (int col = 1; col <= cinema.getColumnSeat(); col++) {
                     Seat seat = new Seat();
-                    seat.setRowNumber(row);
-                    seat.setColumnNumber(col);
+                    seat.setSeatRowNumber(row);
+                    seat.setSeatColumnNumber(col);
                     seat.setOccupied(false);
                     seat.setFunction(function);
                     seats.add(seat);

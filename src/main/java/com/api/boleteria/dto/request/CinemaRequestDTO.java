@@ -22,12 +22,12 @@ public class CinemaRequestDTO {
     @NotNull(message = "La cantidad de filas es obligatoria")
     @Min(value = 1, message = "La capacidad mínima es 1")
     @Max(value = 20, message = "La capacidad máxima permitida es 20 filas")
-    private Integer rows;
+    private Integer rowSeat;
 
     @NotNull(message = "La capacidad es obligatoria")
     @Min(value = 1, message = "La capacidad mínima es 1")
     @Max(value = 20, message = "La capacidad máxima permitida es 20 columnas")
-    private Integer columns;
+    private Integer columnSeat;
 
     @NotNull(message = "El campo habilitada es obligatorio")
     private Boolean enabled;
