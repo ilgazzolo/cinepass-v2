@@ -1,6 +1,7 @@
 package com.api.boleteria.service;
 
 import com.api.boleteria.dto.detail.CinemaDetailDTO;
+import com.api.boleteria.dto.list.UserListDTO;
 import com.api.boleteria.dto.request.CinemaRequestDTO;
 import com.api.boleteria.model.Cinema;
 import com.api.boleteria.model.MovieCartelera;
@@ -175,6 +176,18 @@ public class MovieService {
         }
         movieRepo.deleteById(id);
     }
+
+
+    public List<MovieCartelera> findAllMoviesBd() {
+        return movieRepo.findAll().stream().toList();
+    }
+
+    public MovieCartelera getByIdBd(Long id) {
+        MovieCartelera movie = movieRepo.findById(id)
+                .orElseThrow(() -> new NotFoundException("La sala con ID: " + id + " no fue encontrada. "));
+        return movie;
+    }
+
 
 
     //-------------------------------FIND--------------------------------//

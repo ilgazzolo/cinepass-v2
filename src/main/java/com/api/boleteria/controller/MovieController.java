@@ -1,6 +1,7 @@
 package com.api.boleteria.controller;
 
 import com.api.boleteria.dto.detail.MovieDetailDTO;
+import com.api.boleteria.dto.list.FunctionListDTO;
 import com.api.boleteria.dto.list.MovieListDTO;
 import com.api.boleteria.model.MovieCartelera;
 import com.api.boleteria.service.MovieService;
@@ -92,6 +93,18 @@ public class MovieController {
         response.put("message", "Película eliminada correctamente.");
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/bd")
+    public ResponseEntity<List<MovieCartelera>> getAllBd() {
+        List<MovieCartelera> list = movieService.findAllMoviesBd();
+        return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/bd/{id}")
+    public ResponseEntity<MovieCartelera> getByIdBd(@PathVariable Long id) {
+        MovieCartelera movie = movieService.getByIdBd(id);
+        return ResponseEntity.ok(movie);
     }
 
 
