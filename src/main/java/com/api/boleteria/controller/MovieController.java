@@ -14,7 +14,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controlador REST para la gestión de películas.
@@ -79,6 +81,17 @@ public class MovieController {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
         return ResponseEntity.ok(movies);
+    }
+
+
+    @DeleteMapping("delete/{id}")
+    public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
+        movieService.deleteById(id);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Película eliminada correctamente.");
+
+        return ResponseEntity.ok(response);
     }
 
 

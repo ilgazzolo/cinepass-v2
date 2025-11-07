@@ -168,7 +168,13 @@ public class MovieService {
         return movieRepo.findAll();
     }
 
+    public void deleteById(Long id) {
 
+        if (!movieRepo.existsById(id)) {
+            throw new NotFoundException("La pelicula con ID: " + id + " no fue encontrada. ");
+        }
+        movieRepo.deleteById(id);
+    }
 
 
     //-------------------------------FIND--------------------------------//
