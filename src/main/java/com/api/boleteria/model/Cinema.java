@@ -29,10 +29,10 @@ public class Cinema {
     private Boolean atmos;
 
     @Column(nullable = false)
-    private int rowSeat;
+    private Integer rowSeat;
 
     @Column(nullable = false)
-    private int columnSeat;
+    private Integer columnSeat;
 
     private Integer seatCapacity;
 

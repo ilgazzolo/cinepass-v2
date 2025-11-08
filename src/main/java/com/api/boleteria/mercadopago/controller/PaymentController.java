@@ -1,46 +1,57 @@
 package com.api.boleteria.mercadopago.controller;
 
-import com.api.boleteria.log.PaymentLog;
+
 import com.api.boleteria.mercadopago.dto.PaymentRequestDTO;
 import com.api.boleteria.mercadopago.dto.PaymentResponseDTO;
 import com.api.boleteria.mercadopago.service.PaymentService;
-import com.api.boleteria.model.Payment;
-import com.mercadopago.client.payment.PaymentClient;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.view.RedirectView;
-import java.util.Map;
 
 
 /**
- * REST controller responsible for managing payment-related endpoints.
- * Handles creation of payment preferences, success/failure/pending callbacks,
- * and webhook notifications from Mercado Pago.
+ * REST controller that manages operations related to payments within the system.
+ * <p>
+ * It provides endpoints for initiating payment processes through Mercado Pago,
+ * allowing authenticated users to create payment preferences that will redirect
+ * them to the Mercado Pago checkout page.
+ * </p>
+ * <p>
+ * This controller acts as an entry point for the frontend (Angular)
+ * and delegates all business logic to the {@link PaymentService}.
+ * </p>
  */
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"http://localhost:4200"})
 public class PaymentController {
 
     private final PaymentService paymentService;
 
-
     //-------------------------------CREATE--------------------------------//
 
     /**
-     * Creates a Mercado Pago payment preference using the data provided by the client.
-     * Accessible only to users with roles {@code ADMIN} or {@code CLIENT}.
+     * Endpoint that creates a new payment preference in Mercado Pago based on client data.
+     * <p>
+     * It validates the incoming request, delegates preference creation to the
+     * {@link PaymentService}, and returns a response with the URL to initiate
+     * the payment in the Mercado Pago sandbox environment.
+     * </p>
+     * <p>
+     * Only users with role {@code CLIENT} are authorized to access this operation.
+     * </p>
      *
-     * @param dto The {@link PaymentRequestDTO} containing details for creating the payment preference.
-     * @return A {@link ResponseEntity} containing the {@link PaymentResponseDTO} on success,
-     *         or an error message if something goes wrong.
+     * @param dto the {@link PaymentRequestDTO} containing product details,
+     *            quantity, price, and user information for the payment request.
+     * @return a {@link ResponseEntity} containing a {@link PaymentResponseDTO} with
+     *         the generated preference data, or an appropriate error message if creation fails.
      */
+
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
+    @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<?> createPreference(@Valid @RequestBody PaymentRequestDTO dto) {
         try{
             PaymentResponseDTO response = paymentService.createPreference(dto);
@@ -51,73 +62,6 @@ public class PaymentController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Error generating payment preference.");
         }
-    }
-
-
-
-    /**
-     * Receives webhook notifications from Mercado Pago.
-     * Extracts the payment ID and delegates processing to the {@link PaymentService}.
-     *
-     * @param payload The notification payload containing payment information.
-     * @return A {@link ResponseEntity} indicating whether the notification was processed successfully.
-     */
-    @PostMapping("/notification")
-    public ResponseEntity<String> handleNotification(@RequestBody Map<String, Object> payload) {
-        try {
-            // El campo "data.id" contiene el ID del pago de Mercado Pago
-            if (payload.containsKey("data")) {
-                Map<String, Object> data = (Map<String, Object>) payload.get("data");
-                String mpPaymentId = String.valueOf(data.get("id"));
-
-                // Llamamos al servicio para procesar el pago
-                paymentService.processWebhookNotification(mpPaymentId);
-            }
-
-            return ResponseEntity.ok("Notification received");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error processing notification: " + e.getMessage());
-        }
-    }
-
-
-    //-------------------------------REDIRECT--------------------------------//
-    //Estas URLs deben coincidir con las rutas que esten definidas en Angular.
-
-    /**
-     * Endpoint called when a payment is successfully completed.
-     *
-     * @return A confirmation message indicating successful payment.
-     */
-    @GetMapping("/success")
-    public RedirectView success() {
-        // Redirige al frontend a la página de éxito
-        return new RedirectView("http://localhost:4200/payment-success");
-    }
-
-
-
-    /**
-     * Endpoint called when a payment fails.
-     *
-     * @return A message indicating payment failure.
-     */
-    public RedirectView failure() {
-        // Redirige al frontend a la página de fallo
-        return new RedirectView("http://localhost:4200/payment-failure");
-    }
-
-
-
-    /**
-     * Endpoint called when a payment is still pending.
-     *
-     * @return A message indicating the payment is pending.
-     */
-    @GetMapping("/pending")
-    public RedirectView pending() {
-        // Redirige al frontend a la página pendiente
-        return new RedirectView("http://localhost:4200/payment-pending");
     }
 
 

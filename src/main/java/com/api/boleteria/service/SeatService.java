@@ -10,8 +10,20 @@ import java.util.List;
 
 
 /**
- * Service for managing operations related to seat allocation in movie theaters.
- * Manages seat searches and status updates.
+ * Servicio encargado de gestionar las operaciones relacionadas con las butacas (seats)
+ * en las funciones de cine.
+ * <p>
+ * Proporciona métodos para buscar, actualizar y mapear las entidades {@link Seat}
+ * asociadas a una función. Permite obtener todas las butacas, filtrar las ocupadas
+ * y marcar una butaca como ocupada.
+ * </p>
+ *
+ * <p>Ejemplo de uso:</p>
+ * <pre>
+ *     List&lt;SeatListDTO&gt; butacas = seatService.findSeatsByFunctionId(5L);
+ *     Seat butacaOcupada = seatService.occupySeat(10L);
+ * </pre>
+ *
  */
 @Service
 @RequiredArgsConstructor
@@ -21,6 +33,13 @@ public class SeatService {
 
     //-------------------------------FIND--------------------------------//
 
+    /**
+     * Obtiene todas las butacas asociadas a una función específica.
+     *
+     * @param functionId ID de la función cuyas butacas se desean obtener.
+     * @return una lista de {@link SeatListDTO} que representa todas las butacas de la función indicada.
+     * @throws NotFoundException si el ID de la función no existe (manejado indirectamente por el repositorio o el controlador).
+     */
     public List<SeatListDTO> findSeatsByFunctionId(Long functionId) {
         List<Seat> seats = seatRepository.findByFunctionId(functionId);
         return seats.stream()
@@ -29,22 +48,45 @@ public class SeatService {
     }
 
 
+
+    /**
+     * Obtiene únicamente las butacas ocupadas asociadas a una función específica.
+     *
+     * @param functionId ID de la función cuyas butacas ocupadas se desean obtener.
+     * @return una lista de {@link SeatListDTO} que contiene solo las butacas ocupadas.
+     * @throws NotFoundException si el ID de la función no existe (manejado indirectamente por el repositorio o el controlador).
+     */
+    public List<SeatListDTO> findSeatOcupiedByFunctionId(Long functionId) {
+        List<Seat> seats = seatRepository.findByFunctionId(functionId);
+        return seats.stream()
+                .filter(Seat::getOccupied)
+                .map(this::mapToListDTO)
+                .toList();
+    }
+
     //-------------------------------UPDATE--------------------------------//
 
+    /**
+     * Marca una butaca específica como ocupada.
+     *
+     * @param seatId ID de la butaca que se desea marcar como ocupada.
+     * @return la entidad {@link Seat} actualizada con la propiedad {@code occupied} establecida en {@code true}.
+     * @throws NotFoundException si no se encuentra la butaca con el ID especificado.
+     */
     public Seat occupySeat(Long seatId) {
         Seat seat = seatRepository.findById(seatId)
-                .orElseThrow(() -> new NotFoundException("Seat not found."));
+                .orElseThrow(() -> new NotFoundException("Butaca no encontrada."));
         seat.setOccupied(true);
         return seatRepository.save(seat);
     }
 
-
     //-------------------------------MAPS--------------------------------//
 
     /**
-     * Convierte una entidad Seat en un DTO de lista.
-     * @param seat entidad Seat
-     * @return SeatListDTO con los datos resumidos de la butaca
+     * Convierte una entidad {@link Seat} en su representación resumida {@link SeatListDTO}.
+     *
+     * @param seat la entidad {@link Seat} a convertir.
+     * @return un {@link SeatListDTO} con los datos básicos de la butaca.
      */
     private SeatListDTO mapToListDTO(Seat seat) {
         return new SeatListDTO(
@@ -55,5 +97,5 @@ public class SeatService {
         );
     }
 
-
 }
+

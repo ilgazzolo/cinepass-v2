@@ -37,71 +37,68 @@ public class FunctionService {
     //-------------------------------SAVE--------------------------------//
 
     /**
-     * Crea una o varias funciones, validando para cada una que no exista función en la misma sala y horario,
-     * que la fecha no supere los dos años, y que no haya solapamientos.
+     * Crea una función, validando que no exista en la misma sala y horario,
+     * que la fecha no supere los dos años y que no haya solapamientos.
      *
-     * @param entities Lista de DTOs con la información de las nuevas funciones.
-     * @return Lista de FunctionDetailDTO con la información de las funciones creadas.
-     * @throws BadRequestException si alguna función no cumple las validaciones.
-     * @throws NotFoundException si alguna sala o película no existe.
+     * @param entity DTO con la información de la nueva función.
+     * @return FunctionDetailDTO con la información de la función creada.
+     * @throws BadRequestException si la función no cumple las validaciones.
+     * @throws NotFoundException si la sala o la película no existen.
      */
     @Transactional
-    public List<FunctionDetailDTO> createAll(List<FunctionRequestDTO> entities) {
-        List<FunctionDetailDTO> createdFunctions = new ArrayList<>();
+    public FunctionDetailDTO create(FunctionRequestDTO entity) {
+        // Validaciones
+        FunctionValidator.validateFields(entity);
+        FunctionValidator.validateMaxTwoYears(entity);
 
-        for (FunctionRequestDTO entity : entities) {
-            FunctionValidator.validateFields(entity);
-            FunctionValidator.validateMaxTwoYears(entity);
-
-            if (functionRepo.existsByCinemaIdAndShowtime(entity.getCinemaId(), entity.getShowtime())) {
-                throw new BadRequestException("Ya existe una función para la sala " + entity.getCinemaId() + " en el horario " + entity.getShowtime());
-            }
-
-            Cinema cinema = cinemaRepo.findById(entity.getCinemaId())
-                    .orElseThrow(() -> new NotFoundException("No existe la sala con ID: " + entity.getCinemaId()));
-            FunctionValidator.validateEnabledCinema(cinema);
-
-            MovieDetailDTO movie;
-            try {
-                movie = movieService.getMovieById(entity.getMovieId());
-                if (movie == null) {
-                    throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
-                }
-            } catch (IOException e) {
-                throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
-            }
-
-            List<Function> functionsInTheCinema = functionRepo.findByCinemaId(entity.getCinemaId());
-            FunctionValidator.validateSchedule(entity, movie, functionsInTheCinema);
-
-            Function function = mapToEntity(entity, cinema, movie);
-            function.setCinema(cinema);
-            function.setMovieId(movie.id());
-            function.setMovieName(movie.title());
-            function.setRunTime(movie.runtime());
-
-            List<Seat> seats = new ArrayList<>();
-            for (int row = 1; row <= cinema.getRowSeat(); row++) {
-                for (int col = 1; col <= cinema.getColumnSeat(); col++) {
-                    Seat seat = new Seat();
-                    seat.setSeatRowNumber(row);
-                    seat.setSeatColumnNumber(col);
-                    seat.setOccupied(false);
-                    seat.setFunction(function);
-                    seats.add(seat);
-                }
-            }
-
-            function.setSeats(seats);
-
-            Function saved = functionRepo.save(function);
-            createdFunctions.add(mapToDetailDTO(saved));
+        if (functionRepo.existsByCinemaIdAndShowtime(entity.getCinemaId(), entity.getShowtime())) {
+            throw new BadRequestException("Ya existe una función para la sala " + entity.getCinemaId() +
+                    " en el horario " + entity.getShowtime());
         }
 
-        return createdFunctions;
+        Cinema cinema = cinemaRepo.findById(entity.getCinemaId())
+                .orElseThrow(() -> new NotFoundException("No existe la sala con ID: " + entity.getCinemaId()));
+        FunctionValidator.validateEnabledCinema(cinema);
+
+        MovieDetailDTO movie;
+        try {
+            movie = movieService.getMovieById(entity.getMovieId());
+            if (movie == null) {
+                throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
+            }
+        } catch (IOException e) {
+            throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
+        }
+
+        List<Function> functionsInTheCinema = functionRepo.findByCinemaId(entity.getCinemaId());
+        FunctionValidator.validateSchedule(entity, movie, functionsInTheCinema);
+
+        // Crear la función
+        Function function = mapToEntity(entity, cinema, movie);
+        function.setCinema(cinema);
+        function.setMovieId(movie.id());
+        function.setMovieName(movie.title());
+        function.setRunTime(movie.runtime());
+
+        // Crear los asientos para esta función
+        List<Seat> seats = new ArrayList<>();
+        for (int row = 1; row <= cinema.getRowSeat(); row++) {
+            for (int col = 1; col <= cinema.getColumnSeat(); col++) {
+                Seat seat = new Seat();
+                seat.setSeatRowNumber(row);
+                seat.setSeatColumnNumber(col);
+                seat.setOccupied(false);
+                seat.setFunction(function);
+                seats.add(seat);
+            }
+        }
+
+        function.setSeats(seats);
+
+        // Guardar función y devolver DTO
+        Function saved = functionRepo.save(function);
+        return mapToDetailDTO(saved);
     }
-
-
 
 
 

@@ -32,5 +32,5 @@ public class TicketRequestDTO {
 
         @NotNull(message = "Debe especificar las butacas.")
         @Min(value = 1, message = "Debe elegir al menos una butaca.")
-        private List<String> seats;  // Ej: ["A1", "A2", "A3"]
+        private List<String> seats;  // Butacas seleccionadas Ej: ["R1C2", "R3C5", "R3C5"]
 }

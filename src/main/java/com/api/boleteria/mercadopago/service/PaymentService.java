@@ -6,10 +6,7 @@ import com.api.boleteria.exception.NotFoundException;
 import com.api.boleteria.log.PaymentLog;
 import com.api.boleteria.mercadopago.dto.PaymentRequestDTO;
 import com.api.boleteria.mercadopago.dto.PaymentResponseDTO;
-import com.api.boleteria.model.Function;
-import com.api.boleteria.model.Payment;
-import com.api.boleteria.model.Ticket;
-import com.api.boleteria.model.User;
+import com.api.boleteria.model.*;
 import com.api.boleteria.model.enums.StatusPayment;
 import com.api.boleteria.repository.*;
 import com.api.boleteria.service.TicketService;
@@ -31,10 +28,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Service class responsible for managing payment operations and interactions
- * with the Mercado Pago API. It handles the creation of payment preferences,
- * status updates, and webhook notifications, while maintaining logs of all
- * payment-related events for audit and debugging purposes.
+ * Service class responsible for handling all payment-related operations and
+ * communication with the Mercado Pago API. It manages payment preference creation,
+ * payment status synchronization through webhooks, and ticket generation upon
+ * successful payments. It also keeps a detailed log of all payment events for
+ * auditing and debugging purposes.
  */
 @Service
 @RequiredArgsConstructor
@@ -44,20 +42,26 @@ public class PaymentService {
     private final IPaymentLogRepository paymentLogRepository;
     private final ITicketRepository ticketRepository;
     private final IFunctionRepository functionRepository;
+    private final ISeatRepository seatRepository;
     private final IUserRepository userRepository;
     private final TicketService ticketService;
     private final UserService userService;
 
 
+    //-------------------------------SAVE--------------------------------//
+
+
     /**
-     * Creates a payment preference in Mercado Pago using the provided payment details.
-     * This method configures the item, return URLs, and notification URL,
-     * then sends a request to Mercado Pago to generate the payment preference.
-     * It also logs the creation of the preference for tracking purposes.
+     * Creates a new payment preference in Mercado Pago using the provided payment data.
+     * The method builds the preference request, sets the item details, back URLs,
+     * notification URL, and auto-return configuration. It then sends the request to
+     * Mercado Pago to obtain a payment preference and stores the local record in the database.
      *
-     * @param dto The {@link PaymentRequestDTO} containing payment information such as title, description, quantity, price, and user email.
-     * @return A {@link PaymentResponseDTO} containing the preference ID and sandbox payment URL to redirect the user.
-     * @throws RuntimeException if any error occurs during the creation of the payment preference.
+     * @param dto The {@link PaymentRequestDTO} containing information such as title,
+     *            description, quantity, price, function ID, and selected seats.
+     * @return A {@link PaymentResponseDTO} with the generated preference ID and the sandbox
+     *         URL to redirect the user for payment.
+     * @throws RuntimeException if any error occurs during preference creation or API communication.
      */
     @Transactional
     public PaymentResponseDTO createPreference(PaymentRequestDTO dto) {
@@ -88,7 +92,7 @@ public class PaymentService {
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(List.of(itemRequest))
                     .backUrls(backUrls)
-                    .notificationUrl("https://larhonda-progravid-caressively.ngrok-free.dev/api/payments/notification")
+                    .notificationUrl("https://larhonda-progravid-caressively.ngrok-free.dev/api/payments/webhooks/notification")
                     .autoReturn("approved")
                     .build();
 
@@ -122,11 +126,7 @@ public class PaymentService {
             paymentLogRepository.save(log);
 
             // Devolver DTO con la URL de sandbox para redirigir al pago
-            return new PaymentResponseDTO(
-                    preference.getId(),
-                    // preference.getInitPoint() para produccion
-                    preference.getSandboxInitPoint()
-            );
+            return mapToResponse(preference);
 
         } catch (MPApiException apiException) {
             System.out.println("Status Code: " + apiException.getStatusCode());
@@ -140,13 +140,18 @@ public class PaymentService {
     }
 
 
+    //-------------------------------UPDATE--------------------------------//
+
+
     /**
-     * Updates (or creates) a payment record in the database based on Mercado Pago webhook data.
-     * Ensures the payment status and logs are consistent.
+     * Updates or creates a {@link Payment} record in the database based on data received
+     * from Mercado Pago. It ensures that the payment status, user information, and logs
+     * remain consistent with the latest update from the platform.
      *
      * @param mpPaymentId The Mercado Pago payment ID.
-     * @param mpStatus    The payment status from Mercado Pago (e.g., "approved", "pending", "rejected").
-     * @param userEmail   The payer's email associated with the payment.
+     * @param mpStatus    The payment status received from Mercado Pago (e.g. "approved", "pending", "rejected").
+     * @param userEmail   The payer’s email address associated with the payment.
+     * @return The updated or newly created {@link Payment} reflecting the current status.
      */
     @Transactional
     public Payment updatePaymentStatus(String mpPaymentId, String mpStatus, String userEmail) {
@@ -203,10 +208,16 @@ public class PaymentService {
 
 
     /**
-     * Processes webhook notifications received from Mercado Pago.
-     * Retrieves payment details using the Mercado Pago API, updates the corresponding
-     * payment status in the database, and logs the notification event.
-     * In case of errors, the failure is recorded in the log with an error message.
+     * Processes incoming webhook notifications from Mercado Pago.
+     * This method retrieves payment details from the Mercado Pago API, updates the
+     * local payment record, and logs the notification event. If the payment is approved,
+     * it also performs the following actions:
+     * <ul>
+     *   <li>Updates seat availability for the related function</li>
+     *   <li>Decreases the function’s available capacity</li>
+     *   <li>Creates and links a new ticket to the payment</li>
+     * </ul>
+     * Any errors are logged for debugging and consistency tracking.
      *
      * @param mpPaymentId The Mercado Pago payment ID included in the webhook notification.
      */
@@ -232,8 +243,8 @@ public class PaymentService {
 
             // Solo crear ticket si el pago fue aprobado
             if (StatusPayment.APPROVED.equals(payment.getStatus())) {
-
                 User user = null;
+
                 if (payment.getUserId() != null) {
                     user = userRepository.findById(payment.getUserId())
                             .orElse(null);
@@ -245,6 +256,27 @@ public class PaymentService {
                 }
 
                 if (user != null && payment.getFunction() != null) {
+                    Function function = payment.getFunction();
+
+                    // Actualizar asientos ocupados
+                    List<String> selectedSeats = payment.getSeats();
+                    if (selectedSeats != null && !selectedSeats.isEmpty()) {
+                        List<Seat> seatsToUpdate = seatRepository.findByFunctionId(function.getId())
+                                .stream()
+                                .filter(seat -> selectedSeats.contains(
+                                        "R" + seat.getSeatRowNumber() + "C" + seat.getSeatColumnNumber()
+                                ))
+                                .toList();
+
+                        seatsToUpdate.forEach(seat -> seat.setOccupied(true));
+                        seatRepository.saveAll(seatsToUpdate);
+                    }
+
+                    // Actualizar capacidad disponible de la funcion
+                    Integer newCapacity = Math.max(0, function.getAvailableCapacity() - payment.getQuantity());
+                    function.setAvailableCapacity(newCapacity);
+                    functionRepository.save(function);
+
                     // Construir DTO para crear el ticket
                     TicketRequestDTO ticketDTO = new TicketRequestDTO();
                     ticketDTO.setFunctionId(payment.getFunction().getId());
@@ -261,23 +293,45 @@ public class PaymentService {
                             payment.getFunction(),
                             ticketDTO
                     );
-
                     // Asociar ticket al pago y persistir
                     payment.setTicket(ticketEntity);
+
                     ticketRepository.save(ticketEntity);
                     paymentRepository.save(payment);
 
                     System.out.println("Ticket created and linked to payment ID: " + mpPaymentId);
-                    }
+
                 }
-        } catch(MPApiException e){
-                System.out.println("Error from Mercado Pago API: " + e.getApiResponse().getContent());
-                e.printStackTrace();
-        } catch(NotFoundException e){
-                e.printStackTrace();
-        } catch(Exception e){
-                e.printStackTrace();
+            }
+        } catch (MPApiException e) {
+            System.out.println("Error from Mercado Pago API: " + e.getApiResponse().getContent());
+            e.printStackTrace();
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
+
+
+    //-------------------------------MAPS--------------------------------//
+
+
+    /**
+     * Maps a Mercado Pago {@link Preference} object to a {@link PaymentResponseDTO}.
+     * This method extracts the preference ID and sandbox initialization URL
+     * (used for testing environments) to build the response object.
+     *
+     * @param preference The Mercado Pago {@link Preference} generated after creating a payment preference.
+     * @return A {@link PaymentResponseDTO} containing the preference ID and the sandbox payment URL.
+     */
+    public PaymentResponseDTO mapToResponse(Preference preference) {
+        return new PaymentResponseDTO(
+                preference.getId(),
+                preference.getSandboxInitPoint() // preference.getInitPoint() para produccion
+        );
+    }
+
+
 }
 
