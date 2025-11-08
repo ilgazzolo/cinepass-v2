@@ -138,7 +138,7 @@ Este proyecto es de uso académico. Todos los derechos reservados.
 
 Luciano Gazzolo  
 Sebastian Aguilera  
-Tomás Constantini  
+Tomás Costantini  
 Nahuel Ramirez  
 
 ---
