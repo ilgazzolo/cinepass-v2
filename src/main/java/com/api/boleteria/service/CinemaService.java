@@ -33,32 +33,28 @@ public class CinemaService {
     /**
      * Crea una o más salas (cinemas) a partir de una lista de DTOs.
      *
-     * @param requests Lista de DTOs con los datos de cada sala a crear.
+     * @param request Lista de DTOs con los datos de cada sala a crear.
      * @return Lista de CinemaDetailDTO con la información de las salas creadas.
      * @throws BadRequestException si alguna sala ya existe con el mismo nombre.
      */
     @Transactional
-    public List<CinemaDetailDTO> saveAll(List<CinemaRequestDTO> requests) {
+    public CinemaDetailDTO save(CinemaRequestDTO request) {
         List<Cinema> cinemasToSave = new ArrayList<>();
 
-        for (CinemaRequestDTO dto : requests) {
-            CinemaValidator.validateFields(dto);
+
+            CinemaValidator.validateFields(request);
 
             // Verificar si ya existe una sala con el mismo nombre
-            if (cinemaRepository.existsByName(dto.getName())) { //
-                throw new BadRequestException("Ya existe una sala con el nombre: " + dto.getName()); //
+            if (cinemaRepository.existsByName(request.getName())) { //
+                throw new BadRequestException("Ya existe una sala con el nombre: " + request.getName()); //
             }
 
-            Cinema cinema = mapToEntity(dto);
+            Cinema cinema = mapToEntity(request);
             cinema.calculateSeatCapacity();
-            cinemasToSave.add(cinema);
-        }
+            cinemaRepository.save(cinema);
+            CinemaDetailDTO cinemaDetailDTO = mapToDetailDTO(cinema);
 
-        List<Cinema> savedCinemas = cinemaRepository.saveAll(cinemasToSave);
-
-        return savedCinemas.stream()
-                .map(this::mapToDetailDTO)
-                .toList();
+        return cinemaDetailDTO;
     }
 
 
