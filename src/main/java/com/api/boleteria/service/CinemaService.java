@@ -99,10 +99,10 @@ public class CinemaService {
      * @return CinemaList con la informacion de las salas encontradas
      */
 
-    public List<CinemaListDTO> findByEnabledRoom(boolean enabled) {
+    public List<CinemaDetailDTO> findByEnabledRoom(boolean enabled) {
         CinemaValidator.validateEnabled(enabled);
-        List<CinemaListDTO> list = cinemaRepository.findByEnabled(enabled).stream()
-                .map(this::mapToListDTO)
+        List<CinemaDetailDTO> list = cinemaRepository.findByEnabled(enabled).stream()
+                .map(this::mapToDetailDTO)
                 .toList();
 
         if (list.isEmpty()) {

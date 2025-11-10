@@ -105,8 +105,8 @@ public class CinemaController {
      */
     @GetMapping("/enabled/{enabled}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
-    public ResponseEntity<List<CinemaListDTO>> getByEnabledRoom(@PathVariable boolean enabled){
-        List<CinemaListDTO> list = cinemaService.findByEnabledRoom(enabled);
+    public ResponseEntity<List<CinemaDetailDTO>> getByEnabledRoom(@PathVariable boolean enabled){
+        List<CinemaDetailDTO> list = cinemaService.findByEnabledRoom(enabled);
         return ResponseEntity.ok(list);
     }
 
