@@ -173,7 +173,7 @@ public class CinemaController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> delete(@PathVariable Long id) {
         cinemaService.deleteById(id);
-        return ResponseEntity.ok("Sala eliminada correctamente.");
+        return ResponseEntity.noContent().build();
     }
 
 }
