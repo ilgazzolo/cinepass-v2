@@ -105,9 +105,7 @@ public class CinemaService {
                 .map(this::mapToDetailDTO)
                 .toList();
 
-        if (list.isEmpty()) {
-            throw new NotFoundException("No se encontraron cines con salas habilitadas: " + enabled);
-        }
+
 
         return list;
     }
