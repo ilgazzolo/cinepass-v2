@@ -77,6 +77,7 @@ public class MovieService {
         String imdbId = node.hasNonNull("imdb_id") ? node.get("imdb_id").asText() : null;
         Double voteAverage = node.hasNonNull("vote_average") ? node.get("vote_average").asDouble() : null;
         Integer voteCount = node.hasNonNull("vote_count") ? node.get("vote_count").asInt() : null;
+        Boolean adult = node.hasNonNull("adult") ? node.get("adult").asBoolean() : false;
 
         // Lista de géneros (TMDB devuelve un array de objetos con {id, name})
         List<String> genres = new ArrayList<>();
@@ -105,13 +106,16 @@ public class MovieService {
                 voteAverage,
                 voteCount,
                 posterUrl,
-                bannerUrl
+                bannerUrl,
+                adult
+
         );
     }
 
     public List<MovieDetailDTO> searchMoviesByTitle(String title) throws IOException {
+        // Codificar el título para la URL
         String query = URLEncoder.encode(title, StandardCharsets.UTF_8);
-        String endpoint = "/search/movie?query=" + query + "&language=es-ES";
+        String endpoint = "/search/movie?query=" + query;
 
         Response response = makeRequest(endpoint);
 
@@ -124,21 +128,16 @@ public class MovieService {
         JsonNode results = rootNode.get("results");
 
         List<MovieDetailDTO> movies = new ArrayList<>();
+
         if (results != null && results.isArray()) {
             for (JsonNode movieNode : results) {
-                Long movieId = movieNode.get("id").asLong();
-                try {
-                    // 🔥 Pedimos los detalles completos de cada película
-                    MovieDetailDTO fullDetails = getMovieById(movieId);
-                    movies.add(fullDetails);
-                } catch (Exception e) {
-                    System.err.println("No se pudieron obtener los detalles de la película ID " + movieId);
-                }
+                movies.add(parseMovieDetailDto(movieNode.toString()));
             }
         }
 
         return movies;
     }
+
 
 
 
@@ -170,6 +169,7 @@ public class MovieService {
         movie.setVoteCount(dto.voteCount());
         movie.setPosterUrl(dto.posterUrl());
         movie.setBannerUrl(dto.bannerUrl());
+        movie.setAdult(dto.adult());
         return movie;
     }
 

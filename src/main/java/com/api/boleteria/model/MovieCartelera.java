@@ -48,6 +48,9 @@ public class MovieCartelera {
     private String posterUrl;
 
     @Column(nullable = true)
+    private Boolean adult;
+
+    @Column(nullable = true)
     private String bannerUrl;
 
     @Column(columnDefinition = "JSON")

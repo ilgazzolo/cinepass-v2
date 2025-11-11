@@ -14,5 +14,6 @@ public record MovieDetailDTO(
         Double voteAverage,
         Integer voteCount,
         String posterUrl,
-        String bannerUrl
+        String bannerUrl,
+        Boolean adult
 ){}
