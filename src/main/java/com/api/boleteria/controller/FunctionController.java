@@ -2,9 +2,11 @@ package com.api.boleteria.controller;
 
 import com.api.boleteria.dto.detail.FunctionDetailDTO;
 import com.api.boleteria.dto.list.FunctionListDTO;
+import com.api.boleteria.dto.list.SeatListDTO;
 import com.api.boleteria.dto.request.FunctionRequestDTO;
 import com.api.boleteria.model.enums.ScreenType;
 import com.api.boleteria.service.FunctionService;
+import com.api.boleteria.service.SeatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,7 @@ import java.util.List;
 @CrossOrigin(origins = {"http://localhost:4200"})
 public class FunctionController {
     private final FunctionService functionService;
+    private final SeatService seatService;
 
 
     //-------------------------------CREATE--------------------------------//
@@ -41,7 +44,7 @@ public class FunctionController {
      * @return ResponseEntity con los detalles de la función creada.
      */
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
+   // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<FunctionDetailDTO> create(@Valid @RequestBody FunctionRequestDTO entity) {
         return ResponseEntity.ok(functionService.create(entity));
     }
@@ -55,12 +58,24 @@ public class FunctionController {
      * @return ResponseEntity con una lista de funciones o 204 No Content si no hay funciones.
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
-    public ResponseEntity<List<FunctionListDTO>> getAll() {
-        List<FunctionListDTO> list = functionService.findAll();
+   @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
+    public ResponseEntity<List<FunctionDetailDTO>> getAll() {
+        List<FunctionDetailDTO> list = functionService.findAll();
         return ResponseEntity.ok(list);
     }
 
+    /**
+     * Obtiene todas las butacas asociadas a una función específica.
+     *
+     * @param functionId ID de la función.
+     * @return Lista de butacas con su estado (ocupada/libre).
+     */
+    @GetMapping("/{functionId}/seats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENT')")
+    public ResponseEntity<List<SeatListDTO>> getSeatsByFunction(@PathVariable Long functionId) {
+        List<SeatListDTO> seats = seatService.getSeatsByFunction(functionId);
+        return ResponseEntity.ok(seats);
+    }
 
 
     /**

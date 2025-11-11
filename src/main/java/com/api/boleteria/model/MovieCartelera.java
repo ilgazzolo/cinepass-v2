@@ -1,5 +1,6 @@
 package com.api.boleteria.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
@@ -7,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -58,6 +60,10 @@ public class MovieCartelera {
 
     @Transient
     private List<String> genres;
+
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = false)
+    @JsonManagedReference("movie-functions")
+    private List<Function> functions = new ArrayList<>();
 
 
     // ✅ Setter: convierte lista → JSON string

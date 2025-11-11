@@ -2,10 +2,14 @@ package com.api.boleteria.service;
 
 import com.api.boleteria.dto.list.SeatListDTO;
 import com.api.boleteria.exception.NotFoundException;
+import com.api.boleteria.model.Function;
 import com.api.boleteria.model.Seat;
+import com.api.boleteria.repository.IFunctionRepository;
 import com.api.boleteria.repository.ISeatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 
@@ -30,6 +34,7 @@ import java.util.List;
 public class SeatService {
 
     private final ISeatRepository seatRepository;
+    private final IFunctionRepository functionRepo;
 
     //-------------------------------FIND--------------------------------//
 
@@ -63,6 +68,20 @@ public class SeatService {
                 .map(this::mapToListDTO)
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public List<SeatListDTO> getSeatsByFunction(Long functionId) {
+        // Validar existencia de la función
+        Function function = functionRepo.findById(functionId)
+                .orElseThrow(() -> new NotFoundException("Función no encontrada: " + functionId));
+
+        // Mapear cada Seat a SeatListDTO
+        return seatRepository.findByFunction_IdOrderBySeatRowNumberAscSeatColumnNumberAsc(functionId)
+                .stream()
+                .map(this::mapToListDTO)
+                .toList();
+    }
+
 
     //-------------------------------UPDATE--------------------------------//
 

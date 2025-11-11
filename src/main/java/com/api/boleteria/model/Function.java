@@ -31,8 +31,10 @@ public class Function {
     @JsonBackReference
     private Cinema cinema;
 
-    @Column(nullable = false)
-    private Long movieId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "movie_id", nullable = false)
+    @JsonBackReference("movie-functions")
+    private MovieCartelera movie;
 
     @Column(nullable = false)
     private String movieName;

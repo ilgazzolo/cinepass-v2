@@ -10,6 +10,7 @@ import com.api.boleteria.model.*;
 import com.api.boleteria.model.enums.ScreenType;
 import com.api.boleteria.repository.ICinemaRepository;
 import com.api.boleteria.repository.IFunctionRepository;
+import com.api.boleteria.repository.IMovieCarteleraRepository;
 import com.api.boleteria.validators.CinemaValidator;
 import com.api.boleteria.validators.FunctionValidator;
 import jakarta.transaction.Transactional;
@@ -17,7 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +34,7 @@ public class FunctionService {
 
     private final IFunctionRepository functionRepo;
     private final ICinemaRepository cinemaRepo;
+    private final IMovieCarteleraRepository movieRepo;
     private final MovieService movieService;
 
 
@@ -60,15 +64,8 @@ public class FunctionService {
                 .orElseThrow(() -> new NotFoundException("No existe la sala con ID: " + entity.getCinemaId()));
         FunctionValidator.validateEnabledCinema(cinema);
 
-        MovieDetailDTO movie;
-        try {
-            movie = movieService.getMovieById(entity.getMovieId());
-            if (movie == null) {
-                throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
-            }
-        } catch (IOException e) {
-            throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
-        }
+        MovieCartelera movie = movieRepo.findById(entity.getMovieId())
+                .orElseThrow(() -> new NotFoundException("No existe la película con ID: " + entity.getMovieId()));
 
         List<Function> functionsInTheCinema = functionRepo.findByCinemaId(entity.getCinemaId());
         FunctionValidator.validateSchedule(entity, movie, functionsInTheCinema);
@@ -76,9 +73,10 @@ public class FunctionService {
         // Crear la función
         Function function = mapToEntity(entity, cinema, movie);
         function.setCinema(cinema);
-        function.setMovieId(movie.id());
-        function.setMovieName(movie.title());
-        function.setRunTime(movie.runtime());
+        function.setMovie(movie);
+        function.setMovieName(movie.getTitle());
+        function.setRunTime(movie.getRuntime());
+        function.setAvailableCapacity(cinema.getSeatCapacity());
 
         // Crear los asientos para esta función
         List<Seat> seats = new ArrayList<>();
@@ -110,7 +108,7 @@ public class FunctionService {
      * @return Lista de FunctionListDTO con la información de las funciones encontradas.
      * @throws NotFoundException si no hay funciones cargadas en el sistema.
      */
-    public List<FunctionListDTO> findAll() {
+    public List<FunctionDetailDTO> findAll() {
         List<Function> functions = functionRepo.findAll()
                 .stream()
                 .filter(f -> Boolean.TRUE.equals(f.getCinema().getEnabled()))
@@ -121,7 +119,7 @@ public class FunctionService {
         }
 
         return functions.stream()
-                .map(this::mapToListDTO)
+                .map(this::mapToDetailDTO)
                 .toList();
     }
 
@@ -276,26 +274,19 @@ public class FunctionService {
                 .orElseThrow(() -> new NotFoundException("No existe la sala ingresada."));
         FunctionValidator.validateEnabledCinema(cinema);
 
-        MovieDetailDTO movie;
 
-        try {
-            movie = movieService.getMovieById(entity.getMovieId());
-            if (movie == null) {
-                throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
-            }
-        } catch (IOException e) {
-            throw new NotFoundException("No existe la película con ID: " + entity.getMovieId());
-        }
+        MovieCartelera movie = movieRepo.findById(entity.getMovieId())
+                .orElseThrow(() -> new NotFoundException("No existe la película con ID: " + entity.getMovieId()));
 
         List<Function> functionsInCinema = functionRepo.findByCinemaId(entity.getCinemaId());
         FunctionValidator.validateSchedule(entity, movie, functionsInCinema);
 
         function.setShowtime(entity.getShowtime());
         function.setCinema(cinema);
-        function.setMovieId(movie.id());
-        function.setMovieName(movie.title());
+        function.setMovie(movie);
+        function.setMovieName(movie.getTitle());
         function.setAvailableCapacity(cinema.getSeatCapacity());
-        function.setRunTime(movie.runtime());
+        function.setRunTime(movie.getRuntime());
 
         Function updated = functionRepo.save(function);
         return mapToDetailDTO(updated);
@@ -332,12 +323,15 @@ public class FunctionService {
      * @return FunctionDetailDTO con los datos detallados de la función
      */
     private FunctionDetailDTO mapToDetailDTO(Function function) {
+        LocalDate date = function.getShowtime().toLocalDate();
+        LocalTime time = function.getShowtime().toLocalTime();
         return new FunctionDetailDTO(
                 function.getId(),
-                function.getShowtime().format(DateTimeFormatter.ISO_DATE_TIME),
+                date,
+                time,
                 function.getCinema().getId(),
                 function.getCinema().getName(),
-                function.getMovieId(),
+                function.getMovie().getId(),
                 function.getMovieName(),
                 function.getAvailableCapacity(),
                 function.getRunTime()
@@ -357,7 +351,7 @@ public class FunctionService {
                 function.getShowtime().toLocalDate(),
                 function.getShowtime().toLocalTime(),
                 function.getCinema().getId(),
-                function.getMovieId(),
+                function.getMovie().getId(),
                 function.getMovieName(),
                 function.getRunTime()
         );
@@ -376,13 +370,12 @@ public class FunctionService {
      * @param movie Entidad Movie asociada a la función.
      * @return Entidad Function creada a partir del DTO y las entidades asociadas.
      */
-    private Function mapToEntity(FunctionRequestDTO entity, Cinema cinema, MovieDetailDTO movie) {
+    private Function mapToEntity(FunctionRequestDTO entity, Cinema cinema, MovieCartelera movie) {
         Function function = new Function();
         function.setShowtime(entity.getShowtime());
         function.setCinema(cinema);
         function.setAvailableCapacity(cinema.getSeatCapacity());
-        function.setMovieId(movie.id());
-        function.setMovieName(movie.title());
+        function.setMovieName(movie.getTitle());
         return function;
     }
 

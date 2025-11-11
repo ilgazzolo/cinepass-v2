@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ISeatRepository extends JpaRepository<Seat, Long> {
     List<Seat>findByFunctionId(Long functionId);
+    List<Seat> findByFunction_IdOrderBySeatRowNumberAscSeatColumnNumberAsc(Long functionId);
 }
