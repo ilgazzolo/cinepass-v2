@@ -1,9 +1,13 @@
 package com.api.boleteria.model;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -45,4 +49,34 @@ public class MovieCartelera {
 
     @Column(nullable = true)
     private String bannerUrl;
+
+    @Column(columnDefinition = "JSON")
+    private String genresJson;
+
+    @Transient
+    private List<String> genres;
+
+
+    // ✅ Setter: convierte lista → JSON string
+    public void setGenres(List<String> genres) {
+        this.genres = genres;
+        try {
+            this.genresJson = new ObjectMapper().writeValueAsString(genres);
+        } catch (Exception e) {
+            this.genresJson = "[]";
+        }
+    }
+
+    // ✅ Getter: convierte JSON string → lista
+    public List<String> getGenres() {
+        if (genres == null && genresJson != null) {
+            try {
+                genres = new ObjectMapper().readValue(
+                        genresJson, new TypeReference<List<String>>() {});
+            } catch (Exception e) {
+                genres = List.of();
+            }
+        }
+        return genres;
+    }
 }

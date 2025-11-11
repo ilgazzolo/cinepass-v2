@@ -110,9 +110,8 @@ public class MovieService {
     }
 
     public List<MovieDetailDTO> searchMoviesByTitle(String title) throws IOException {
-        // Codificar el título para la URL
         String query = URLEncoder.encode(title, StandardCharsets.UTF_8);
-        String endpoint = "/search/movie?query=" + query;
+        String endpoint = "/search/movie?query=" + query + "&language=es-ES";
 
         Response response = makeRequest(endpoint);
 
@@ -127,12 +126,20 @@ public class MovieService {
         List<MovieDetailDTO> movies = new ArrayList<>();
         if (results != null && results.isArray()) {
             for (JsonNode movieNode : results) {
-                movies.add(parseMovieDetailDto(movieNode.toString()));
+                Long movieId = movieNode.get("id").asLong();
+                try {
+                    // 🔥 Pedimos los detalles completos de cada película
+                    MovieDetailDTO fullDetails = getMovieById(movieId);
+                    movies.add(fullDetails);
+                } catch (Exception e) {
+                    System.err.println("No se pudieron obtener los detalles de la película ID " + movieId);
+                }
             }
         }
 
         return movies;
     }
+
 
 
     public MovieCartelera save(Long id) {
@@ -157,6 +164,7 @@ public class MovieService {
         movie.setReleaseDate(dto.releaseDate());
         movie.setRuntime(dto.runtime());
         movie.setOverview(dto.overview());
+        movie.setGenres(dto.genres());
         movie.setImdbId(dto.imdbId());
         movie.setVoteAverage(dto.voteAverage());
         movie.setVoteCount(dto.voteCount());
