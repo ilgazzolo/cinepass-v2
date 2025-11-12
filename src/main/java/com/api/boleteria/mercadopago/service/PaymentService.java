@@ -64,9 +64,9 @@ public class PaymentService {
             Payment payment = new Payment();
             payment.setUserId(user.getId());
             payment.setUserEmail(user.getEmail());
-            payment.setQuantity(dto.getQuantity());
+            payment.setQuantity(dto.getSeats().size());
 
-            payment.setAmount(dto.getUnitPrice().multiply(BigDecimal.valueOf(dto.getQuantity())));
+            payment.setAmount(dto.getUnitPrice().multiply(BigDecimal.valueOf(dto.getSeats().size())));
             payment.setStatus(StatusPayment.APPROVED);          ///HARDCODEADO
             payment.setSeats(dto.getSeats());
             Function function = functionRepository.findById(dto.getFunctionId())
@@ -80,7 +80,7 @@ public class PaymentService {
             PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
                     .title(dto.getTitle())
                     .description(dto.getDescription())
-                    .quantity(dto.getQuantity())
+                    .quantity(dto.getSeats().size())
                     .currencyId("ARS")
                     .unitPrice(dto.getUnitPrice())
                     .build();

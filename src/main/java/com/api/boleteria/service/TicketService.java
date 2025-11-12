@@ -70,12 +70,12 @@ public class TicketService {
         ticket.setUser(user);
         ticket.setFunction(function);
         ticket.setUnitPrice(dto.getUnitPrice());
-        ticket.setQuantity(dto.getQuantity());
-        ticket.setTotalAmount(dto.getUnitPrice().multiply(BigDecimal.valueOf(dto.getQuantity())));
+        ticket.setQuantity(dto.getSeats().size());
+        ticket.setTotalAmount(dto.getUnitPrice().multiply(BigDecimal.valueOf(dto.getSeats().size())));
         ticket.setPurchaseDateTime(LocalDateTime.now());
         ticket.setSeats(dto.getSeats());
 
-        function.setAvailableCapacity(function.getAvailableCapacity() - dto.getQuantity());
+        function.setAvailableCapacity(function.getAvailableCapacity() - dto.getSeats().size());
         functionRepository.save(function);
         ticketRepository.save(ticket);
 
@@ -165,8 +165,8 @@ public class TicketService {
     public Ticket mapToEntity(User user, Function function, TicketRequestDTO dto) {
         Ticket ticket = new Ticket();
         ticket.setUnitPrice(dto.getUnitPrice());
-        ticket.setTotalAmount(dto.getUnitPrice().multiply(BigDecimal.valueOf(dto.getQuantity())));
-        ticket.setQuantity(dto.getQuantity());
+        ticket.setTotalAmount(dto.getUnitPrice().multiply(BigDecimal.valueOf(dto.getSeats().size())));
+        ticket.setQuantity(dto.getSeats().size());
         ticket.setPurchaseDateTime(LocalDateTime.now());
         ticket.setUser(user);
         ticket.setFunction(function);
