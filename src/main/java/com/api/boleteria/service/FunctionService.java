@@ -160,16 +160,14 @@ public class FunctionService {
     public List<FunctionDetailDTO> findByMovieIdAndAvailableCapacity(Long movieId) {
         FunctionValidator.validateMovieId(movieId);
 
-        MovieDetailDTO movie;
+        MovieCartelera movie;
 
-        try {
-            movie = movieService.getMovieById(movieId);
+
+            movie = movieService.getByIdBd(movieId);
             if (movie == null) {
                 throw new NotFoundException("No existe la película con ID: " + movieId);
             }
-        } catch (IOException e) {
-            throw new NotFoundException("No existe la película con ID: " + movieId);
-        }
+
 
         List<Function> functions = functionRepo
                 .findByMovieIdAndAvailableCapacityGreaterThanAndShowtimeAfterAndCinema_EnabledTrue(
