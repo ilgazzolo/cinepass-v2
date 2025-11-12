@@ -163,10 +163,10 @@ public class FunctionService {
         MovieCartelera movie;
 
 
-            movie = movieService.getByIdBd(movieId);
-            if (movie == null) {
-                throw new NotFoundException("No existe la película con ID: " + movieId);
-            }
+        movie = movieService.getByIdBd(movieId);
+        if (movie == null) {
+            throw new NotFoundException("No existe la película con ID: " + movieId);
+        }
 
 
         List<Function> functions = functionRepo
@@ -376,6 +376,4 @@ public class FunctionService {
         function.setMovieName(movie.getTitle());
         return function;
     }
-
-
 }

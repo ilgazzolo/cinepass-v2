@@ -1,11 +1,14 @@
 package com.api.boleteria.service;
 
+import com.api.boleteria.dto.detail.CinemaDetailDTO;
 import com.api.boleteria.dto.list.SeatListDTO;
 import com.api.boleteria.exception.NotFoundException;
+import com.api.boleteria.model.Cinema;
 import com.api.boleteria.model.Function;
 import com.api.boleteria.model.Seat;
 import com.api.boleteria.repository.IFunctionRepository;
 import com.api.boleteria.repository.ISeatRepository;
+import com.api.boleteria.validators.CinemaValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +53,11 @@ public class SeatService {
         return seats.stream()
                 .map(this::mapToListDTO)
                 .toList();
+    }
+
+    public Seat findSeatById(Long id) {
+        Seat seat = seatRepository.findById(id).orElseThrow(() -> new NotFoundException("Función no encontrada: " + id));
+        return seat ;
     }
 
 

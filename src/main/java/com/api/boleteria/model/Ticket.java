@@ -48,4 +48,7 @@ public class Ticket {
     @Column(name = "seat")
     private List<String> seats = new ArrayList<>(); // Esto crea una tabla auxiliar ticket_seats con dos columnas: ticket_id (FK)  y  seat (nombre o código de la butaca)
 
+    @OneToOne(mappedBy = "ticket", fetch = FetchType.LAZY)
+    private Payment payment;
+
 }

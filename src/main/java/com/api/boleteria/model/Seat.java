@@ -30,4 +30,6 @@ public class Seat {
     @JsonBackReference
     private Function function;  // A qué función pertenece
 
+
+
 }

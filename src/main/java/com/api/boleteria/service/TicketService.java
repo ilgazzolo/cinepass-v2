@@ -53,7 +53,7 @@ public class TicketService {
      * @throws BadRequestException si no hay capacidad suficiente o fondos en la tarjeta.
      */
     @Transactional
-    public TicketDetailDTO createTicketFromPayment(User user, TicketRequestDTO dto) {
+    public Ticket createTicketFromPayment(User user, TicketRequestDTO dto) {
         TicketValidator.validateFields(dto);
 
         Function function = functionRepository.findById(dto.getFunctionId())
@@ -79,7 +79,7 @@ public class TicketService {
         functionRepository.save(function);
         ticketRepository.save(ticket);
 
-        return mapToDetailDTO(ticket);
+        return ticket;
     }
 
 
@@ -170,8 +170,10 @@ public class TicketService {
         ticket.setPurchaseDateTime(LocalDateTime.now());
         ticket.setUser(user);
         ticket.setFunction(function);
+        ticket.setSeats(dto.getSeats());
         return ticket;
     }
+
 
 
 

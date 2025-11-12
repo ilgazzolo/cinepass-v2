@@ -4,6 +4,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,6 +32,6 @@ public class TicketRequestDTO {
         private BigDecimal totalAmount;
 
         @NotNull(message = "Debe especificar las butacas.")
-        @Min(value = 1, message = "Debe elegir al menos una butaca.")
-        private List<String> seats;  // Butacas seleccionadas Ej: ["R1C2", "R3C5", "R3C5"]
+        @Size(min = 1, message = "Debe elegir al menos una butaca.")
+        private List<String> seats;  // Ej: ["R1C2", "R3C5"]
 }

@@ -40,15 +40,12 @@ public class Payment {
     private StatusPayment status;   // Estado del pago (approved, pending, failure)
 
     private BigDecimal amount;  // Monto del pago
-
     private LocalDateTime createdAt;    // Fecha de creación del pago
-
     private LocalDateTime updatedAt;    // Fecha de actualización del pago
-
     private LocalDateTime date;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "ticket_id")    // Relación con el ticket asociado (1 pago -> 1 ticket)
+    @OneToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "ticket_id", unique = true, nullable = true)
     private Ticket ticket;
 
     @ManyToOne

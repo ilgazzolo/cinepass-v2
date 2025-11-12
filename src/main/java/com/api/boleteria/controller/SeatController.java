@@ -1,6 +1,7 @@
 package com.api.boleteria.controller;
 
 import com.api.boleteria.dto.list.SeatListDTO;
+import com.api.boleteria.model.Seat;
 import com.api.boleteria.service.SeatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -59,6 +60,13 @@ public class SeatController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
     public ResponseEntity<List<SeatListDTO>> getSeatsOcupiedByFunctionId(@PathVariable Long functionId) {
         List<SeatListDTO> seats = seatService.findSeatOcupiedByFunctionId(functionId);
+        return ResponseEntity.ok(seats);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
+    public ResponseEntity<Seat> getSeatsByd(@PathVariable Long id) {
+        Seat seats = seatService.findSeatById(id);
         return ResponseEntity.ok(seats);
     }
 }
