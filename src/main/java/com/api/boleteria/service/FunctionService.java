@@ -160,9 +160,7 @@ public class FunctionService {
                 .findByMovieIdAndAvailableCapacityGreaterThanAndShowtimeAfterAndCinema_EnabledTrue(
                         movieId, 0, LocalDateTime.now());
 
-        if (functions.isEmpty()) {
-            throw new NotFoundException("No hay funciones disponibles para la película con ID " + movieId);
-        }
+
 
         return functions.stream()
                 .map(this::mapToDetailDTO)
