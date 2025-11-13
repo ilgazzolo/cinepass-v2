@@ -143,27 +143,48 @@ public class UserService implements UserDetailsService {
      *
      * @param req DTO del usuario con cambios realizados.
      * @return UserDetailDTO con la información actualizada del usuario especificado.
-     * @throws BadRequestException si el nuevo username o email ya están en uso por otro usuario.
+     * @throws BadRequestException si el nuevo username o email ya están en uso por otro usuario,
+     *                             o si la contraseña actual no es correcta al intentar cambiarla.
      */
     public UserDetailDTO update(RegisterRequestDTO req) {
         User user = findAuthenticatedUser();
-        UserValidator.validateFields(req);
+
+        // Validaciones específicas para actualización (password opcional)
+        UserValidator.validateUpdateFields(req);
 
         // Validar si el nuevo username ya existe para otro usuario
-        if (!user.getUsername().equals(req.getUsername()) && userRepository.existsByUsernameAndIdNot(req.getUsername(), user.getId())) { //
-            throw new BadRequestException("El nombre de usuario '" + req.getUsername() + "' ya está en uso por otro usuario."); //
+        if (!user.getUsername().equals(req.getUsername())
+                && userRepository.existsByUsernameAndIdNot(req.getUsername(), user.getId())) {
+            throw new BadRequestException("El nombre de usuario '" + req.getUsername() + "' ya está en uso por otro usuario.");
         }
 
         // Validar si el nuevo email ya existe para otro usuario
-        if (!user.getEmail().equals(req.getEmail()) && userRepository.existsByEmailAndIdNot(req.getEmail(), user.getId())) { //
-            throw new BadRequestException("El email '" + req.getEmail() + "' ya está registrado por otro usuario."); //
+        if (!user.getEmail().equals(req.getEmail())
+                && userRepository.existsByEmailAndIdNot(req.getEmail(), user.getId())) {
+            throw new BadRequestException("El email '" + req.getEmail() + "' ya está registrado por otro usuario.");
         }
 
+        //  Si quiere cambiar contraseña, validar contraseña actual
+        if (req.getPassword() != null && !req.getPassword().isBlank()) {
+
+            // Debe enviar currentPassword
+            if (req.getCurrentPassword() == null || req.getCurrentPassword().isBlank()) {
+                throw new BadRequestException("Debes ingresar tu contraseña actual para cambiarla.");
+            }
+
+            // currentPassword debe coincidir con la del usuario
+            if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPassword())) {
+                throw new BadRequestException("La contraseña actual no es correcta.");
+            }
+        }
+
+        // Actualizar entidad
         updateEntityFromDto(req, user);
 
         User updated = userRepository.save(user);
         return mapToDetailDTO(updated);
     }
+
 
 
     /**
@@ -287,7 +308,12 @@ public class UserService implements UserDetailsService {
         user.setSurname(dto.getSurname());
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        // Si la nueva contraseña NO viene informada, se mantiene la actual
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+        // Si está vacía → no se toca user.setPassword(...)
     }
 
 

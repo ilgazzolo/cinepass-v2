@@ -40,6 +40,22 @@ public class UserValidator {
     }
 
     /**
+     * Valida campos para actualización de usuario.
+     * La contraseña es OPCIONAL: solo se valida si viene informada.
+     */
+    public static void validateUpdateFields(RegisterRequestDTO dto) {
+        validateName(dto.getName());
+        validateSurname(dto.getSurname());
+        validateUsername(dto.getUsername());
+        validateEmail(dto.getEmail());
+
+        // Contraseña sólo si viene con contenido
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            validatePassword(dto.getPassword());
+        }
+    }
+
+    /**
      * Valida el nombre: no vacío, longitud máxima y caracteres permitidos.
      *
      * @param name Nombre a validar.
