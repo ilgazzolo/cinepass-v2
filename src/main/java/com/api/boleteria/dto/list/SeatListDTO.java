@@ -2,7 +2,7 @@ package com.api.boleteria.dto.list;
 
 public record SeatListDTO(
    Long id,
-   Integer rowNumber,
-   Integer columnNumber,
+   Integer seatRowNumber,
+   Integer seatColumnNumber,
    Boolean occupied
 ) {}
