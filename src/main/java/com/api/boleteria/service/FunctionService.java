@@ -223,9 +223,7 @@ public class FunctionService {
                 .findByCinemaIdAndAvailableCapacityGreaterThanAndShowtimeAfter(
                         cinemaId, 0, LocalDateTime.now());
 
-        if (functions.isEmpty()) {
-            throw new NotFoundException("No hay funciones disponibles para la sala con ID " + cinemaId);
-        }
+
 
         return functions.stream()
                 .map(this::mapToDetailDTO)
