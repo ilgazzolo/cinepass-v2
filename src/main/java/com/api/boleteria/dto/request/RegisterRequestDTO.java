@@ -35,6 +35,7 @@ public class RegisterRequestDTO {
     )
     @ToString.Exclude
     private String password;
+    private String currentPassword;
 
 
 
