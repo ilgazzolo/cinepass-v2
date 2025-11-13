@@ -114,10 +114,6 @@ public class FunctionService {
                 .filter(f -> Boolean.TRUE.equals(f.getCinema().getEnabled()))
                 .toList();
 
-        if (functions.isEmpty()) {
-            throw new NotFoundException("No hay funciones cargadas en el sistema.");
-        }
-
         return functions.stream()
                 .map(this::mapToDetailDTO)
                 .toList();
@@ -159,15 +155,6 @@ public class FunctionService {
      */
     public List<FunctionDetailDTO> findByMovieIdAndAvailableCapacity(Long movieId) {
         FunctionValidator.validateMovieId(movieId);
-
-        MovieCartelera movie;
-
-
-        movie = movieService.getByIdBd(movieId);
-        if (movie == null) {
-            throw new NotFoundException("No existe la película con ID: " + movieId);
-        }
-
 
         List<Function> functions = functionRepo
                 .findByMovieIdAndAvailableCapacityGreaterThanAndShowtimeAfterAndCinema_EnabledTrue(

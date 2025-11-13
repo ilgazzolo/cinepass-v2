@@ -157,6 +157,7 @@ public class CinemaService {
                     c.setColumnSeat(entity.getColumnSeat());
                     c.calculateSeatCapacity();
                     c.setEnabled(entity.getEnabled());
+                    c.setPrice(entity.getPrice());
                     Cinema updated = cinemaRepository.save(c);
                     return mapToDetailDTO(updated);
                 })
@@ -248,7 +249,8 @@ public class CinemaService {
                 cinema.getRowSeat(),
                 cinema.getColumnSeat(),
                 cinema.getSeatCapacity(),
-                cinema.getEnabled()
+                cinema.getEnabled(),
+                cinema.getPrice()
         );
     }
 
@@ -261,6 +263,7 @@ public class CinemaService {
         cinema.setColumnSeat(dto.getColumnSeat());
         cinema.calculateSeatCapacity();
         cinema.setEnabled(dto.getEnabled());
+        cinema.setPrice(dto.getPrice());
         return cinema;
     }
 }

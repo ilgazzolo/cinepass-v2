@@ -3,6 +3,7 @@ package com.api.boleteria.controller;
 import com.api.boleteria.dto.detail.MovieDetailDTO;
 import com.api.boleteria.dto.list.FunctionListDTO;
 import com.api.boleteria.dto.list.MovieListDTO;
+import com.api.boleteria.dto.request.MovieUpdateRequestDTO;
 import com.api.boleteria.model.MovieCartelera;
 import com.api.boleteria.service.MovieService;
 import jakarta.validation.Valid;
@@ -76,8 +77,8 @@ public class MovieController {
     }
 
     @GetMapping("")
-    public ResponseEntity<List<MovieCartelera>> getAllMovies() {
-        List<MovieCartelera> movies = movieService.getAllMovies();
+    public ResponseEntity<List<MovieDetailDTO>> getAllMovies() {
+        List<MovieDetailDTO> movies = movieService.getAllMovies();
         if (movies.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
@@ -96,15 +97,25 @@ public class MovieController {
     }
 
     @GetMapping("/bd")
-    public ResponseEntity<List<MovieCartelera>> getAllBd() {
-        List<MovieCartelera> list = movieService.findAllMoviesBd();
+    public ResponseEntity<List<MovieDetailDTO>> getAllBd() {
+        List<MovieDetailDTO> list = movieService.findAllMoviesBd();
         return ResponseEntity.ok(list);
     }
 
     @GetMapping("/bd/{id}")
-    public ResponseEntity<MovieCartelera> getByIdBd(@PathVariable Long id) {
-        MovieCartelera movie = movieService.getByIdBd(id);
+    public ResponseEntity<MovieDetailDTO> getByIdBd(@PathVariable Long id) {
+        MovieDetailDTO movie = movieService.getByIdBd(id);
         return ResponseEntity.ok(movie);
+    }
+
+    @PutMapping("/update/{id}")
+    @PreAuthorize("hasRole('ADMIN')") // si estás usando seguridad por roles
+    public ResponseEntity<MovieDetailDTO> updateMovie(
+            @PathVariable Long id,
+            @RequestBody MovieUpdateRequestDTO request
+    ) {
+        MovieDetailDTO updated = movieService.updateMovie(id, request);
+        return ResponseEntity.ok(updated);
     }
 
 

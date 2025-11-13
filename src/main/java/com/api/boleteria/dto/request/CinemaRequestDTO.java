@@ -31,4 +31,9 @@ public class CinemaRequestDTO {
 
     @NotNull(message = "El campo habilitada es obligatorio")
     private Boolean enabled;
+
+    @NotNull(message = "El precio es obligatorio")
+    @Positive(message = "El precio debe ser mayor que cero")
+    private Double price;
+
 }

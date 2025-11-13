@@ -3,11 +3,13 @@ package com.api.boleteria.service;
 import com.api.boleteria.dto.detail.CinemaDetailDTO;
 import com.api.boleteria.dto.list.UserListDTO;
 import com.api.boleteria.dto.request.CinemaRequestDTO;
+import com.api.boleteria.dto.request.MovieUpdateRequestDTO;
 import com.api.boleteria.model.Cinema;
 import com.api.boleteria.model.MovieCartelera;
 import com.api.boleteria.repository.IFunctionRepository;
 import com.api.boleteria.repository.IMovieCarteleraRepository;
 import com.api.boleteria.validators.CinemaValidator;
+import jakarta.transaction.Transactional;
 import okhttp3.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -173,9 +175,13 @@ public class MovieService {
         return movie;
     }
 
-    public List<MovieCartelera> getAllMovies() {
-        return movieRepo.findAll();
+    public List<MovieDetailDTO> getAllMovies() {
+        return movieRepo.findAll()
+                .stream()
+                .map((m)->toDTO(m))
+                .toList();
     }
+
 
     public void deleteById(Long id) {
 
@@ -186,14 +192,74 @@ public class MovieService {
     }
 
 
-    public List<MovieCartelera> findAllMoviesBd() {
-        return movieRepo.findAll().stream().toList();
+    public List<MovieDetailDTO> findAllMoviesBd() {
+
+        return movieRepo.findAll()
+                .stream()
+                .map((m)->toDTO(m))
+                .toList();
     }
 
-    public MovieCartelera getByIdBd(Long id) {
+
+    public MovieDetailDTO getByIdBd(Long id) {
         MovieCartelera movie = movieRepo.findById(id)
-                .orElseThrow(() -> new NotFoundException("La sala con ID: " + id + " no fue encontrada. "));
-        return movie;
+                .orElseThrow(() -> new NotFoundException("La película con ID: " + id + " no fue encontrada."));
+
+        return toDTO(movie);
+    }
+
+
+    public static MovieDetailDTO toDTO(MovieCartelera movie) {
+        if (movie == null) return null;
+
+        return new MovieDetailDTO(
+                movie.getId(),
+                movie.getTitle(),
+                movie.getOriginalLanguage(),
+                movie.getReleaseDate(),
+                movie.getRuntime(),
+                movie.getGenres(),
+                movie.getOverview(),
+                movie.getImdbId(),
+                movie.getVoteAverage(),
+                movie.getVoteCount(),
+                movie.getPosterUrl(),
+                movie.getBannerUrl(),
+                movie.getAdult()
+        );
+    }
+
+    @Transactional
+    public MovieDetailDTO updateMovie(Long id, MovieUpdateRequestDTO request) {
+        MovieCartelera movie = movieRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Película no encontrada con id: " + id));
+
+        // Solo cambiamos los campos que permitís editar desde el front
+        if (request.getTitle() != null) {
+            movie.setTitle(request.getTitle());
+        }
+
+        if (request.getAdult() != null) {
+            movie.setAdult(request.getAdult());
+        }
+
+        if (request.getOverview() != null) {
+            movie.setOverview(request.getOverview());
+        }
+
+        if (request.getPosterUrl() != null) {
+            movie.setPosterUrl(request.getPosterUrl());
+        }
+
+        if (request.getGenres() != null) {
+            movie.setGenres(request.getGenres());
+        }
+
+        if (request.getBannerUrl() != null) {
+            movie.setBannerUrl(request.getBannerUrl());
+        }
+
+        return toDTO( movieRepo.save(movie));
     }
 
 

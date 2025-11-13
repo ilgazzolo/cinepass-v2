@@ -39,6 +39,9 @@ public class Cinema {
     @Column(nullable = false)
     private Boolean enabled;
 
+    @Column(nullable = false)
+    private Double price;
+
     @OneToMany(mappedBy = "cinema", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Function> functions = new ArrayList<>();
 

@@ -10,5 +10,6 @@ public record CinemaDetailDTO (
         Integer rowSeat,
         Integer columnSeat,
         Integer seatCapacity,
-        Boolean enabled
+        Boolean enabled,
+        Double price
 ){}
