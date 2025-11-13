@@ -143,6 +143,7 @@ public class TicketService {
                 ticket.getId(),
                 ticket.getFunction().getMovieName(),
                 ticket.getFunction().getCinema().getId(),
+                ticket.getFunction().getId(),
                 ticket.getPurchaseDateTime().toLocalDate().toString(),
                 ticket.getPurchaseDateTime().toLocalTime().toString(),
                 ticket.getUnitPrice(),

@@ -7,6 +7,7 @@ public record TicketDetailDTO(
         Long id,
         String movieTitle,
         Long cinemaId,
+        Long funcionId,
         String purchaseDate,
         String purchaseTime,
         BigDecimal unitPrice,
