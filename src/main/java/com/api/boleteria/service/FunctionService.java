@@ -212,12 +212,6 @@ public class FunctionService {
     public List<FunctionDetailDTO> findByCinemaId(Long cinemaId) {
         FunctionValidator.validateCinemaId(cinemaId);
 
-        Cinema cinema = cinemaRepo.findById(cinemaId)
-                .orElseThrow(() -> new NotFoundException("No se encontró la sala con ID " + cinemaId));
-
-        if (!Boolean.TRUE.equals(cinema.getEnabled())) {
-            throw new NotFoundException("La sala con ID " + cinemaId + " está deshabilitada.");
-        }
 
         List<Function> functions = functionRepo
                 .findByCinemaIdAndAvailableCapacityGreaterThanAndShowtimeAfter(
