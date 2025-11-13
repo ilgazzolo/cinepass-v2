@@ -46,11 +46,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/cinemas/**").permitAll()
                         .requestMatchers("/api/movies/**").permitAll()
+                        .requestMatchers("/api/functions/**").permitAll()
+                        .requestMatchers("/api/payments/webhooks/**").permitAll()
                         .requestMatchers("/api/tickets/**").authenticated()
                         .requestMatchers("/api/userManagement/**").authenticated()
                         .requestMatchers("/api/payments/**").authenticated()
-                        .requestMatchers("/api/functions/**").permitAll()
-
                         .anyRequest().authenticated())
 
                 .addFilterBefore(jwtAuthFilter(),

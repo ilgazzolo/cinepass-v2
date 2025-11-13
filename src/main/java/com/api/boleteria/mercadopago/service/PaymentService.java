@@ -87,9 +87,9 @@ public class PaymentService {
 
             // 3) Back URLs
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                    .success("https://larhonda-progravid-caressively.ngrok-free.dev/success")
-                    .pending("https://larhonda-progravid-caressively.ngrok-free.dev/pending")
-                    .failure("https://larhonda-progravid-caressively.ngrok-free.dev/failure")
+                    .success("https://shay-nonepisodic-rocky.ngrok-free.dev/api/payments/webhooks/success")
+                    .pending("https://shay-nonepisodic-rocky.ngrok-free.dev/api/payments/webhooks/pending")
+                    .failure("https://shay-nonepisodic-rocky.ngrok-free.dev/api/payments/webhooks/failure")
                     .build();
 
             // 4) Crear preferencia con external_reference = ID del Payment local

@@ -77,7 +77,7 @@ public class WebHookController {
     @GetMapping("/success")
     public RedirectView success() {
         // Redirige al frontend a la página de éxito
-        return new RedirectView("http://localhost:4200/payment-success");
+        return new RedirectView("http://localhost:4200/");
     }
 
 
@@ -93,7 +93,7 @@ public class WebHookController {
     @GetMapping("/failure")
     public RedirectView failure() {
         // Redirige al frontend a la página de fallo
-        return new RedirectView("http://localhost:4200/payment-failure");
+        return new RedirectView("http://localhost:4200/");
     }
 
 
@@ -109,7 +109,7 @@ public class WebHookController {
     @GetMapping("/pending")
     public RedirectView pending() {
         // Redirige al frontend a la página pendiente
-        return new RedirectView("http://localhost:4200/payment-pending");
+        return new RedirectView("http://localhost:4200/");
     }
 
 
