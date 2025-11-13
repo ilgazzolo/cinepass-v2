@@ -71,7 +71,6 @@ public class FunctionController {
      * @return Lista de butacas con su estado (ocupada/libre).
      */
     @GetMapping("/{functionId}/seats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENT')")
     public ResponseEntity<List<SeatListDTO>> getSeatsByFunction(@PathVariable Long functionId) {
         List<SeatListDTO> seats = seatService.getSeatsByFunction(functionId);
         return ResponseEntity.ok(seats);
@@ -85,7 +84,6 @@ public class FunctionController {
      * @return ResponseEntity con el detalle de la función.
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
     public ResponseEntity<FunctionDetailDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(functionService.findById(id));
     }
@@ -103,7 +101,6 @@ public class FunctionController {
      * @return ResponseEntity con la lista de funciones disponibles o 204 si está vacía.
      */
     @GetMapping("/available/{movieId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
     public ResponseEntity<List<FunctionDetailDTO>> getAvailableFunctionsPerMovie(@PathVariable Long movieId) {
         List<FunctionDetailDTO> functions = functionService.findByMovieIdAndAvailableCapacity(movieId);
         return ResponseEntity.ok(functions);

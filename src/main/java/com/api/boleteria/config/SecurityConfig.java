@@ -44,11 +44,13 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/cinemas/**").authenticated()
+                        .requestMatchers("/api/cinemas/**").permitAll()
                         .requestMatchers("/api/movies/**").permitAll()
                         .requestMatchers("/api/tickets/**").authenticated()
                         .requestMatchers("/api/userManagement/**").authenticated()
                         .requestMatchers("/api/payments/**").authenticated()
+                        .requestMatchers("/api/functions/**").permitAll()
+
                         .anyRequest().authenticated())
 
                 .addFilterBefore(jwtAuthFilter(),

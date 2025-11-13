@@ -75,7 +75,6 @@ public class CinemaController {
      * @return ResponseEntity con el detalle de la sala solicitada.
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENT')")
     public ResponseEntity<CinemaDetailDTO> getById(@PathVariable Long id){
         return ResponseEntity.ok(cinemaService.findById(id));
     }
