@@ -1,6 +1,6 @@
 # CineMass - API de Pagos (Spring Boot + Mercado Pago)
 
-Backend del sistema **CineMass**, desarrollado en **Spring Boot** y arquitectura MVC con integración a **Mercado Pago Checkout Pro (Sandbox)**, conectada a una base de datos mediante Spring Data JPA, diseñada para gestionar la venta de boletos de cine online de manera agil y segura.
+Backend del sistema **CinePass**, desarrollado en **Spring Boot** y arquitectura MVC con integración a **Mercado Pago Checkout Pro (Sandbox)**, conectada a una base de datos mediante Spring Data JPA, diseñada para gestionar la venta de boletos de cine online de manera agil y segura.
   
 Permite generar preferencias de pago y probar transacciones reales desde el entorno local usando **Ngrok**.
 
@@ -79,7 +79,7 @@ La seguridad de la API se configuró usando `SecurityFilterChain` con JWT y mane
 ## Como correr el proyecto
  1. Clonar el repositorio:   
 ```bash
-git clone https://github.com/ilgazzolo/cinepass-v2.git
+git clone https://github.com/ilgazzolo/cinema-management-api.git
 cd cinepass-v2  
 ```
  2. Configurar la base de datos en src/main/application.properties:
@@ -89,7 +89,16 @@ spring.datasource.username=tu_usuario
 spring.datasource.password=tu_contraseña
 spring.jpa.hibernate.ddl-auto=create
 ```
- 3. Ejecuta la aplicación:
+ 3. Configura las credenciales de Mercado pago:
+```bash
+# En Windows (Powershell)
+setx MP_ACCESS_TOKEN "TU_ACCESS_TOKEN"
+``` 
+ 4. Guarda tu token de Ngrok:
+```bash
+ngrok config add-authtoken TU_TOKEN_DE_NGROK
+```
+ 5. Ejecuta la aplicación:
 ```bash
 ./mvnw spring-boot:run
 ```
@@ -129,7 +138,7 @@ PreferenceRequest preferenceRequest = PreferenceRequest.builder()
     .autoReturn("approved")
     .build();
 ```
-  El dominio de ngrok expira cada vez que se reinicia, por lo tanto, deben actualizar las URLs cada vez que lo vuelvan a ejecutar.
+  El dominio de ngrok expira cada vez que se reinicia, por lo tanto, debes actualizar las URLs cada vez que lo vuelvan a ejecutar.
 
 ---
 
