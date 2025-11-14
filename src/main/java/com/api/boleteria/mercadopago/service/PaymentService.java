@@ -71,6 +71,8 @@ public class PaymentService {
         try {
             // Inicializar SDK de Mercado Pago
             MercadoPagoConfig.setAccessToken(System.getenv("MP_ACCESS_TOKEN"));
+            // Guarda URL de ngrok
+            String tunel = System.getenv("MIAPP_NGROKURL");
 
             // Obtener usuario autenticado
             User user = userService.findAuthenticatedUser();
@@ -102,18 +104,18 @@ public class PaymentService {
                     .unitPrice(dto.getUnitPrice())
                     .build();
 
-            // 3) Back URLs
+            // Back URLs
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                    .success(System.getenv("URL_NGROK") + "/api/payments/webhooks/success")
-                    .pending(System.getenv("URL_NGROK") + "/api/payments/webhooks/pending")
-                    .failure(System.getenv("URL_NGROK") + "/api/payments/webhooks/failure")
+                    .success(tunel + "/api/payments/webhooks/success")
+                    .pending(tunel + "/api/payments/webhooks/pending")
+                    .failure(tunel + "/api/payments/webhooks/failure")
                     .build();
 
-            // 4) Crear preferencia con external_reference = ID del Payment local
+            // Crear preferencia con external_reference = ID del Payment local
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(List.of(itemRequest))
                     .backUrls(backUrls)
-                    .notificationUrl(System.getenv("URL_NGROK") + "/api/payments/webhooks/notification")
+                    .notificationUrl(tunel + "/api/payments/webhooks/notification")
                     .autoReturn("approved")
                     .externalReference(payment.getId().toString())
                     .build();
