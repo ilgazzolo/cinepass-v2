@@ -75,7 +75,9 @@ public class TicketService {
         ticket.setPurchaseDateTime(LocalDateTime.now());
         ticket.setSeats(dto.getSeats());
 
+        // Actualiza la capacidad disponible
         function.setAvailableCapacity(function.getAvailableCapacity() - dto.getSeats().size());
+
         functionRepository.save(function);
         ticketRepository.save(ticket);
 

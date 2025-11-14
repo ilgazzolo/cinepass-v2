@@ -48,8 +48,6 @@ public class PaymentService {
     private final TicketService ticketService;
     private final UserService userService;
 
-    @Value("${miapp.ngrokUrl}")
-    private String ngrokUrl;
 
 
     //-------------------------------SAVE--------------------------------//
@@ -61,26 +59,28 @@ public class PaymentService {
             // Inicializar SDK de Mercado Pago
             MercadoPagoConfig.setAccessToken(System.getenv("MP_ACCESS_TOKEN"));
 
-            // Usuario autenticado
+            // Obtener usuario autenticado
             User user = userService.findAuthenticatedUser();
 
-            // 1) Crear y guardar Payment local primero (para obtener ID)
+            // Crear y guardar Payment local primero (para obtener ID)
             Payment payment = new Payment();
             payment.setUserId(user.getId());
             payment.setUserEmail(user.getEmail());
             payment.setQuantity(dto.getSeats().size());
-
+            payment.setDate(LocalDateTime.now());
             payment.setAmount(dto.getUnitPrice().multiply(BigDecimal.valueOf(dto.getSeats().size())));
-            payment.setStatus(StatusPayment.APPROVED);          ///HARDCODEADO
+            payment.setStatus(StatusPayment.APPROVED); // para crear el ticket
             payment.setSeats(dto.getSeats());
             Function function = functionRepository.findById(dto.getFunctionId())
                     .orElseThrow(() -> new NotFoundException("Function with ID: " + dto.getFunctionId() + " not found"));
             payment.setFunction(function);
             payment.prePersist();
             payment.setTicket(this.crearTicket(user.getUsername(),user.getId(),function,dto.getSeats(), dto.getQuantity(),dto.getUnitPrice().multiply(BigDecimal.valueOf(dto.getQuantity()))));
-            paymentRepository.save(payment); // <-- ya tenemos payment.getId()
 
-            // 2) Armar item
+            // Persistir pago local
+            paymentRepository.save(payment);
+
+            // Armar item
             PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
                     .title(dto.getTitle())
                     .description(dto.getDescription())
@@ -91,35 +91,35 @@ public class PaymentService {
 
             // 3) Back URLs
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                    .success(ngrokUrl + "/api/payments/webhooks/success")
-                    .pending(ngrokUrl + "/api/payments/webhooks/pending")
-                    .failure(ngrokUrl + "/api/payments/webhooks/failure")
+                    .success(System.getenv("URL_NGROK") + "/api/payments/webhooks/success")
+                    .pending(System.getenv("URL_NGROK") + "/api/payments/webhooks/pending")
+                    .failure(System.getenv("URL_NGROK") + "/api/payments/webhooks/failure")
                     .build();
 
             // 4) Crear preferencia con external_reference = ID del Payment local
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(List.of(itemRequest))
                     .backUrls(backUrls)
-                    .notificationUrl(ngrokUrl + "/api/payments/webhooks/notification")
+                    .notificationUrl(System.getenv("URL_NGROK") + "/api/payments/webhooks/notification")
                     .autoReturn("approved")
-                    .externalReference(payment.getId().toString()) // <--- CLAVE
+                    .externalReference(payment.getId().toString())
                     .build();
 
             PreferenceClient client = new PreferenceClient();
             Preference preference = client.create(preferenceRequest);
 
-            // 5) Guardar preferenceId en el Payment local
+            // Guardar preferenceId en el Payment local
             payment.setPreferenceId(preference.getId());
             paymentRepository.save(payment);
 
-            // 6) Log
+            // Log del intento
             PaymentLog log = new PaymentLog();
             log.setStatus("PREFERENCE_CREATED");
             log.setUserEmail(dto.getUserEmail());
             log.setTimestamp(LocalDateTime.now());
             paymentLogRepository.save(log);
 
-            // 7) Respuesta
+            // Respuesta
             return mapToResponse(preference);
 
         } catch (MPApiException apiException) {
@@ -217,8 +217,8 @@ public class PaymentService {
                 paymentRepository.save(payment);
             }
 
-            // Si aprobado → crear ticket (una sola vez)
-            if (true) {
+            // Crear el ticket si el pago fue aprobado
+            if (StatusPayment.APPROVED.equals(payment.getStatus())) {
 
                 // Buscar usuario por ID o email
                 User user = null;
@@ -234,7 +234,7 @@ public class PaymentService {
                     Function function = payment.getFunction();
 
 
-                    // 1) Marcar asientos ocupados (lo dejamos acá para no tocar TicketService)
+                    // Marcar asientos ocupados
                     List<String> selectedSeats = payment.getSeats();
                     if (selectedSeats != null && !selectedSeats.isEmpty()) {
                         List<Seat> seatsToUpdate = seatRepository.findByFunctionId(function.getId())
@@ -246,7 +246,7 @@ public class PaymentService {
                         seatRepository.saveAll(seatsToUpdate);
                     }
 
-                    // 2) Armar DTO con unitPrice calculado (clave)
+                    // Armar DTO con unitPrice calculado (clave)
                     BigDecimal unitPrice = (payment.getQuantity() != null && payment.getQuantity() > 0)
                             ? payment.getAmount().divide(BigDecimal.valueOf(payment.getQuantity()), 2, java.math.RoundingMode.HALF_UP)
                             : BigDecimal.ZERO;
@@ -258,11 +258,8 @@ public class PaymentService {
                     ticketDTO.setTotalAmount(payment.getAmount());
                     ticketDTO.setSeats(payment.getSeats());
 
-                    // 3) IMPORTANTE: NO restar capacidad acá.
-                    //    Dejar que lo haga TicketService.createTicketFromPayment(...)
 
-
-                    // 4) Vincular el ticket creado al Payment sin duplicarlo
+                    // Vincular el ticket creado al Payment sin duplicarlo
                     //    (buscamos el último ticket de ese user+function)
                     Ticket ticketEntity = ticketRepository
                             .findTopByUserIdAndFunctionIdOrderByPurchaseDateTimeDesc(user.getId(), function.getId())
@@ -285,9 +282,7 @@ public class PaymentService {
     }
 
 
-
-
-    public Ticket crearTicket(String username, Long userId, Function function, List<String> seats, int quantity, BigDecimal mount){
+    public Ticket crearTicket(String username, Long userId, Function function, List<String> seats, int quantity, BigDecimal mount) {
         if (true) {
 
             // Buscar usuario por ID o email
@@ -297,35 +292,34 @@ public class PaymentService {
             }
             if (user == null) {
                 user = userRepository.findByUsername(user.getUsername())
-                        .orElseThrow(() -> new NotFoundException("User no encontrado"));
+                        .orElseThrow(() -> new NotFoundException("User not found"));
             }
 
             if (user != null && function != null) {
 
 
-                System.out.println("ACA SE TIENEN QUE CREAR LOS TICKETS--------------------------------------");
                 List<Seat> allSeats = seatRepository.findByFunctionId(function.getId());
 
-                // 🔹 Buscar los asientos que matchean los códigos enviados (R1C1)
+                // Buscar los asientos que matchean los códigos enviados (R1C1)
                 List<Seat> seatsToUpdate = allSeats.stream()
                         .filter(seat -> seats.contains("R" + seat.getSeatRowNumber() + "C" + seat.getSeatColumnNumber()))
                         .toList();
 
                 if (seatsToUpdate.isEmpty()) {
-                    throw new NotFoundException("Ninguno de los asientos enviados coincide con los disponibles para la función.");
+                    throw new NotFoundException("None of the seats sent match those available for the performance.");
                 }
 
-                // 🔹 Marcar ocupados y guardar
+                // Marcar ocupados y guardar
                 seatsToUpdate.forEach(seat -> seat.setOccupied(true));
                 seatRepository.saveAll(seatsToUpdate);
 
-                // 🔹 Convertir a lista de IDs
+                // Convertir a lista de IDs
                 List<String> seatIds = seatsToUpdate.stream()
                         .map(seat -> seat.getId().toString())
                         .toList();
 
-                // 2) Armar DTO con unitPrice calculado (clave)
-                BigDecimal unitPrice = ( quantity > 0)
+                // Armar DTO con unitPrice calculado (clave)
+                BigDecimal unitPrice = (quantity > 0)
                         ? mount.divide(BigDecimal.valueOf(quantity), 2, java.math.RoundingMode.HALF_UP)
                         : BigDecimal.ZERO;
 
@@ -336,11 +330,9 @@ public class PaymentService {
                 ticketDTO.setTotalAmount(mount);
                 ticketDTO.setSeats(seatIds);
 
-                // 3) IMPORTANTE: NO restar capacidad acá.
-                //    Dejar que lo haga TicketService.createTicketFromPayment(...)
-                Ticket ticket = ticketService.createTicketFromPayment(user, ticketDTO);
 
-                return ticket;
+                return ticketService.createTicketFromPayment(user, ticketDTO);
+
             }
 
         }
