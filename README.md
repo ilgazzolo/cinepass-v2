@@ -1,4 +1,4 @@
-# CineMass - API de Pagos (Spring Boot + Mercado Pago)
+# CinePass - API de Pagos (Spring Boot + Mercado Pago)
 
 Backend del sistema **CinePass**, desarrollado en **Spring Boot** y arquitectura MVC con integración a **Mercado Pago Checkout Pro (Sandbox)**, conectada a una base de datos mediante Spring Data JPA, diseñada para gestionar la venta de boletos de cine online de manera agil y segura.
   
@@ -152,6 +152,6 @@ Nahuel Ramirez
 
 ---
 
-**Universidad Tecnologica Nacional**
+**Universidad Tecnologica Nacional 2025**
 
 ---
