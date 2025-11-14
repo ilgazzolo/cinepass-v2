@@ -21,6 +21,7 @@ import com.mercadopago.resources.preference.Preference;
 import com.mercadopago.MercadoPagoConfig;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -46,6 +47,9 @@ public class PaymentService {
     private final IUserRepository userRepository;
     private final TicketService ticketService;
     private final UserService userService;
+
+    @Value("${miapp.ngrokUrl}")
+    private String ngrokUrl;
 
 
     //-------------------------------SAVE--------------------------------//
@@ -87,16 +91,16 @@ public class PaymentService {
 
             // 3) Back URLs
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                    .success("https://shay-nonepisodic-rocky.ngrok-free.dev/api/payments/webhooks/success")
-                    .pending("https://shay-nonepisodic-rocky.ngrok-free.dev/api/payments/webhooks/pending")
-                    .failure("https://shay-nonepisodic-rocky.ngrok-free.dev/api/payments/webhooks/failure")
+                    .success(ngrokUrl + "/api/payments/webhooks/success")
+                    .pending(ngrokUrl + "/api/payments/webhooks/pending")
+                    .failure(ngrokUrl + "/api/payments/webhooks/failure")
                     .build();
 
             // 4) Crear preferencia con external_reference = ID del Payment local
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(List.of(itemRequest))
                     .backUrls(backUrls)
-                    .notificationUrl("https://larhonda-progravid-caressively.ngrok-free.dev/api/payments/webhooks/notification")
+                    .notificationUrl(ngrokUrl + "/api/payments/webhooks/notification")
                     .autoReturn("approved")
                     .externalReference(payment.getId().toString()) // <--- CLAVE
                     .build();
@@ -229,7 +233,7 @@ public class PaymentService {
                 if (user != null && payment.getFunction() != null) {
                     Function function = payment.getFunction();
 
-                    System.out.println("ACA SE TIENEN QUE CREAR LOS TICKETS--------------------------------------");
+
                     // 1) Marcar asientos ocupados (lo dejamos acá para no tocar TicketService)
                     List<String> selectedSeats = payment.getSeats();
                     if (selectedSeats != null && !selectedSeats.isEmpty()) {
@@ -241,7 +245,7 @@ public class PaymentService {
                         seatsToUpdate.forEach(seat -> seat.setOccupied(true));
                         seatRepository.saveAll(seatsToUpdate);
                     }
-                    System.out.println("ACA YA TIENEN QUE CREAR LOS TICKETS----------------------------------------------");
+
                     // 2) Armar DTO con unitPrice calculado (clave)
                     BigDecimal unitPrice = (payment.getQuantity() != null && payment.getQuantity() > 0)
                             ? payment.getAmount().divide(BigDecimal.valueOf(payment.getQuantity()), 2, java.math.RoundingMode.HALF_UP)
@@ -319,7 +323,7 @@ public class PaymentService {
                 List<String> seatIds = seatsToUpdate.stream()
                         .map(seat -> seat.getId().toString())
                         .toList();
-                System.out.println("ACA YA TIENEN QUE CREAR LOS TICKETS----------------------------------------------");
+
                 // 2) Armar DTO con unitPrice calculado (clave)
                 BigDecimal unitPrice = ( quantity > 0)
                         ? mount.divide(BigDecimal.valueOf(quantity), 2, java.math.RoundingMode.HALF_UP)
