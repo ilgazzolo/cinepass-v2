@@ -53,6 +53,19 @@ public class PaymentService {
     //-------------------------------SAVE--------------------------------//
 
 
+
+    /**
+     * Creates a new payment preference in Mercado Pago using the provided payment data.
+     * The method builds the preference request, sets the item details, back URLs,
+     * notification URL, and auto-return configuration. It then sends the request to
+     * Mercado Pago to obtain a payment preference and stores the local record in the database.
+     *
+     * @param dto The {@link PaymentRequestDTO} containing information such as title,
+     *            description, quantity, price, function ID, and selected seats.
+     * @return A {@link PaymentResponseDTO} with the generated preference ID and the sandbox
+     *         URL to redirect the user for payment.
+     * @throws RuntimeException if any error occurs during preference creation or API communication.
+     */
     @Transactional
     public PaymentResponseDTO createPreference(PaymentRequestDTO dto) {
         try {
@@ -138,6 +151,16 @@ public class PaymentService {
     //-------------------------------UPDATE--------------------------------//
 
 
+    /**
+     * Updates or creates a {@link Payment} record in the database based on data received
+     * from Mercado Pago. It ensures that the payment status, user information, and logs
+     * remain consistent with the latest update from the platform.
+     *
+     * @param mpPaymentId The Mercado Pago payment ID.
+     * @param mpStatus    The payment status received from Mercado Pago (e.g. "approved", "pending", "rejected").
+     * @param userEmail   The payer’s email address associated with the payment.
+     * @return The updated or newly created {@link Payment} reflecting the current status.
+     */
     @Transactional
     public Payment updatePaymentStatus(String mpPaymentId, String mpStatus, String userEmail) {
         Payment payment = paymentRepository.findByMpPaymentId(mpPaymentId)
@@ -184,6 +207,20 @@ public class PaymentService {
 
 
 
+    /**
+     * Processes incoming webhook notifications from Mercado Pago.
+     * This method retrieves payment details from the Mercado Pago API, updates the
+     * local payment record, and logs the notification event. If the payment is approved,
+     * it also performs the following actions:
+     * <ul>
+     *   <li>Updates seat availability for the related function</li>
+     *   <li>Decreases the function’s available capacity</li>
+     *   <li>Creates and links a new ticket to the payment</li>
+     * </ul>
+     * Any errors are logged for debugging and consistency tracking.
+     *
+     * @param mpPaymentId The Mercado Pago payment ID included in the webhook notification.
+     */
     @Transactional
     public void processWebhookNotification(String mpPaymentId) {
         try {
@@ -282,6 +319,22 @@ public class PaymentService {
     }
 
 
+    /**
+     * Creates a new {@link Ticket} after a successful payment.
+     * <p>
+     * This method validates the user, retrieves the seats selected for the function,
+     * marks those seats as occupied, and prepares the necessary data to delegate
+     * the ticket creation to the {@link TicketService}.
+     *
+     * @param username The username of the purchaser (may be null if userId is used).
+     * @param userId   The ID of the user who completed the payment.
+     * @param function The function (movie show) for which the ticket is being generated.
+     * @param seats    A list of seat codes in the format "R{row}C{column}" (e.g., "R1C5").
+     * @param quantity The number of seats purchased.
+     * @param mount    The total amount paid for the purchase.
+     * @return The generated {@link Ticket}, or {@code null} if validation fails.
+     * @throws NotFoundException If the user or seats cannot be found.
+     */
     public Ticket crearTicket(String username, Long userId, Function function, List<String> seats, int quantity, BigDecimal mount) {
         if (true) {
 
