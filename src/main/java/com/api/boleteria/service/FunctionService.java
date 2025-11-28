@@ -309,7 +309,8 @@ public class FunctionService {
                 function.getMovie().getId(),
                 function.getMovieName(),
                 function.getAvailableCapacity(),
-                function.getRunTime()
+                function.getRunTime(),
+                function.getCinema().getPrice()
         );
     }
 
