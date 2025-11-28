@@ -1,5 +1,6 @@
 package com.api.boleteria.dto.detail;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -12,5 +13,6 @@ public record FunctionDetailDTO(
         Long movieId,
         String movieName,
         Integer availableCapacity,
-        Integer runTime
+        Integer runTime,
+        Double unitPrice
 ) {}
